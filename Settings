@@ -1,0 +1,8 @@
+# Libvirt
+LIBVIRT_URI='qemu:///system'
+LIBVIRT_STORAGE=/var/lib/libvirt/images/
+LIBVIRT_NETWORK_PREFIX='192.168.99'
+
+# OpenShift
+DOMAIN='ocp.com'
+CLUSTER_NAME='4.9.9'
