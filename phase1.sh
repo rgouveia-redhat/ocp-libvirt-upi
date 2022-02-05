@@ -3,7 +3,41 @@
 # Phase 1 - Prepare the infrastrucutre.
 #
 
-# Verify libvirt is enabled
+
+### Validate settings.
+source Settings
+
+echo "
+
+IMPORTANT
+This script uses the values defined in the 'Settings' file.
+Feel free to adjust the values to your needs.
+
+These are the current values for your reference:
+
+LIBVIRT_URI=$LIBVIRT_URI
+LIBVIRT_STORAGE=$LIBVIRT_STORAGE
+LIBVIRT_NETWORK_PREFIX=$LIBVIRT_NETWORK_PREFIX
+
+DOMAIN=$DOMAIN
+CLUSTER_NAME=$CLUSTER_NAME
+
+Do you want to continue? Press Enter or CTRL+C to abort."
+
+#read tmp
+
+
+### Check for sudo privileges
+
+sudo id 2>&1 1>/dev/null
+if [ $? -eq 0 ]; then
+	echo "INFO: User has sudo privileges."
+else
+	echo "WARNING: User DOES NOT have sudo privileges without password."
+fi
+
+
+### Verify libvirt is enabled
 if [ $(sudo systemctl is-enabled libvirtd.service) != 'enabled' ] ; then
   echo "Error: Libvirt is not enabled."
   exit -1
@@ -11,7 +45,7 @@ else
   echo "INFO: Libvirt installed and enabled."
 fi
 
-# Check for binaries.
+### Check for needed binaries.
 packages=""
 
 virsh -v 2>&1 1>/dev/null
@@ -36,35 +70,15 @@ else
 fi
 
 if [ "$packages" != "" ] ; then
-  echo "Installing missing virt packages..."
+  echo "INFO: Installing missing virt packages..."
   sudo dnf install -y $packages
 fi
 
-# Validate settings.
-source Settings
 
-echo "
-
-This setup uses the values defined in the Settings file.
-Feel free to adjust to your liking.
-
-
-Current values:
-
-LIBVIRT_URI=$LIBVIRT_URI
-LIBVIRT_STORAGE=$LIBVIRT_STORAGE
-LIBVIRT_NETWORK_PREFIX=$LIBVIRT_NETWORK_PREFIX
-
-DOMAIN=$DOMAIN
-CLUSTER_NAME=$CLUSTER_NAME
-
-Do you want to continue? Press Enter or CTRL+C to abort."
-
-read tmp
-
-
-# Connect to system instance of libvirt.
-virsh connect qemu:///system
+### Connect to system instance of libvirt.
+sudo virsh connect qemu:///system
 
 
 # Create network for cluster.
+netxml=$(eval "echo \"$(cat files.phase1/network.xml)\"")
+echo $netxml
