@@ -1,5 +1,6 @@
 <network>
   <name>$CLUSTER_NAME</name>
-  <domain name=\"$DOMAIN\"/>
+  <forward mode="nat"/>
+  <domain name=\"$CLUSTER_DOMAIN\"/>
   <ip address=\"${LIBVIRT_NETWORK_PREFIX}.1\" netmask=\"255.255.255.0\"/>
 </network>
