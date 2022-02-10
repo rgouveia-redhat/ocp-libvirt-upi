@@ -18,6 +18,7 @@ These are the current values for your reference:
 LIBVIRT_URI=$LIBVIRT_URI
 LIBVIRT_STORAGE=$LIBVIRT_STORAGE
 LIBVIRT_NETWORK_PREFIX=$LIBVIRT_NETWORK_PREFIX
+LIBVIRT_POOL_NAME=$LIBVIRT_POOL_NAME
 
 CLUSTER_DOMAIN=$CLUSTER_DOMAIN
 CLUSTER_NAME=$CLUSTER_NAME
@@ -82,13 +83,21 @@ sudo virsh connect qemu:///system
 
 
 # Create network for cluster.
-if [ $DISCONNECTED ] ; then
-    netxml=$(eval "echo \"$(cat files.phase1/virt-network-isolated.xml)\"")
+net_exists=$(sudo virsh net-list --all --name | grep $CLUSTER_NAME)
+if [ "$net_exists" != "" ] ; then
+    echo "INFO: Network already exists."
 else
-    netxml=$(eval "echo \"$(cat files.phase1/virt-network-nat.xml)\"")
-fi
-echo $netxml > /tmp/network-tmp.xml
+    if [ $DISCONNECTED ] ; then
+        netxml=$(eval "echo \"$(cat files.phase1/virt-network-isolated.xml)\"")
+    else
+        netxml=$(eval "echo \"$(cat files.phase1/virt-network-nat.xml)\"")
+    fi
+    echo $netxml > /tmp/network-tmp.xml
 
-sudo virsh net-define --file /tmp/network-tmp.xml
-sudo virsh net-autostart $CLUSTER_NAME
-sudo virsh net-start $CLUSTER_NAME
+    sudo virsh net-define --file /tmp/network-tmp.xml
+    sudo virsh net-autostart $CLUSTER_NAME
+    sudo virsh net-start $CLUSTER_NAME
+fi
+
+
+
