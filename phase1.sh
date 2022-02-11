@@ -24,6 +24,16 @@ CLUSTER_NAME=$CLUSTER_NAME
 CLUSTER_VERSION=$CLUSTER_VERSION
 DISCONNECTED=$DISCONNECTED
 
+BASTION_INSTALL_TYPE=$BASTION_INSTALL_TYPE
+BASTION_INSTALL_ISO=$BASTION_INSTALL_ISO
+
+(If redhat)> REDHAT_SUBSCRIPTION_POOL=$REDHAT_SUBSCRIPTION_POOL
+
+BASTION_DISK_SIZE=$BASTION_DISK_SIZE
+BASTION_CPUS=$BASTION_CPUS
+BASTION_MEMORY_SIZE=$BASTION_MEMORY_SIZE
+
+
 Do you want to continue? Press Enter or CTRL+C to abort."
 
 #read tmp
@@ -77,11 +87,15 @@ if [ "$packages" != "" ] ; then
 fi
 
 
+### Set permission on images folder.
+sudo chown -R qemu:qemu $LIBVIRT_STORAGE_POOL_BASE
+
+
 ### Connect to system instance of libvirt.
 sudo virsh connect qemu:///system
 
 
-# Create network for cluster.
+### Create network for cluster.
 if [ "$(sudo virsh net-list --all --name | grep $CLUSTER_NAME)" != "" ] ; then
     echo "INFO: Network already exists."
 else
@@ -98,7 +112,8 @@ else
     rm /tmp/network-tmp.xml
 fi
 
-# Create the storage pool for the cluster.
+
+### Create the storage pool for the cluster.
 if [ "$(sudo virsh pool-list --all --name | grep $CLUSTER_NAME)" != "" ] ; then
     echo "INFO: Storage Pool already exists."
 else
@@ -111,39 +126,75 @@ else
 fi
 
 
+### Check for installation ISO.
+if [ "$BASTION_INSTALL_ISO" != "" ] && [ -f $BASTION_INSTALL_ISO ] ; then
+	echo "INFO: Using '$BASTION_INSTALL_ISO' as the source ISO."
+else
+	echo "ERROR: Install ISO not found! Please define BASTION_INSTALL_ISO."
+	exit 2
+fi
 
-echo "############### Check/Create Server VM."
 
-if [ "$(sudo virsh list --all | grep $SERVER_NAME)" == "" ] ; then
-	sudo nice -n 19 virt-install -n $SERVER_NAME \
-		--vcpus 1 \
-		--memory 1024 \
-		--disk /var/lib/libvirt/images/${SERVER_NAME}.qcow2,size=10 \
-		--location $CDROM_ISO_FILE \
-		--os-variant centos7.0 \
+### Check/Create SSH Keys. OpenShift compatible.
+if [ -f ./ssh/id_rsa ]; then
+	echo "INFO: SSH keys already created."
+else
+    echo "INFO: Generating SSH Keys..."
+    mkdir ./ssh
+    ssh-keygen -t ed25519 -f ./ssh/id_rsa -N ''
+    chmod 400 ./ssh/id_rsa*
+fi
+
+exit
+
+echo
+echo "############### Generate new kickstart file."
+echo "INFO: Generating new kickstart files."
+
+ssh_key=$(cat ./ssh_rsa_key.pub)
+
+sed -e "s#SSH_KEY_PLACEHOLDER#${ssh_key}#" templates/server.ks.tpl > ./server.ks
+if ! [ $? -eq 0 ]; then
+	echo "ERROR: Error generating kickstart file"
+	exit 5
+fi
+
+# Create bastion vm.
+if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-bastion)" != "" ] ; then
+    echo "INFO: Bastion VM already exists."
+else
+    # Variant. Check with ''
+    variant='centos8'
+    if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
+        variant='rhel8.5'
+    fi
+    if [ "$BASTION_INSTALL_TYPE" == "fedora" ]; then
+        variant='fedora35'
+    fi
+
+	sudo nice -n 19 virt-install --name ${CLUSTER_NAME}-bastion \
+        --cpu host \
+		--vcpus $BASTION_CPUS \
+		--memory $BASTION_MEMORY_SIZE \
+		--disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-bastion.qcow2,size=$BASTION_DISK_SIZE \
+		--location $BASTION_INSTALL_ISO \
+		--os-variant $variant \
 		--network network=default,model=virtio \
 		--initrd-inject=./server.ks \
-	  --extra-args 'ks=file:/server.ks' \
+	    --extra-args 'ks=file:/server.ks' \
 		--noautoconsole
 
-		echo
-		echo "INFO: VMs will power off after installation. Waiting for it..."
+    echo
+    echo "INFO: VMs will power off after installation. Waiting for it..."
 
-		vms_ready=0
-		while [[ $vms_ready -eq 0 ]] ; do
-			if [ "$(sudo virsh domstate $SERVER_NAME)" == "shut off" ]
-				then
-				 vms_ready=1
-				else
-				 echo -n "."
-				 sleep $DELAY
-				fi
-		done
-		echo ""
+    vms_ready=0
+    while [[ $vms_ready -eq 0 ]] ; do
+        if [ "$(sudo virsh domstate ${CLUSTER_NAME}-bastion)" == "shut off" ]; then
+            vms_ready=1
+        else
+            echo -n "."
+            sleep $DELAY
+        fi
+    done
 
-	else
-		echo "INFO: Server VM already exists. Delete it if you want to recreate it."
-		echo "INFO: Shutting down the VM due to next step expects it..."
-		sudo virsh shutdown $SERVER_NAME
-		sleep 5
-	fi
+fi
