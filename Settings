@@ -1,6 +1,5 @@
 # Libvirt
 LIBVIRT_URI='qemu:///system'
-#LIBVIRT_STORAGE=/var/lib/libvirt/images/
 LIBVIRT_NETWORK_PREFIX='192.168.99'
 LIBVIRT_STORAGE_POOL_BASE='/ssd-data'
 

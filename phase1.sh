@@ -16,7 +16,6 @@ Feel free to adjust the values to your needs.
 These are the current values for your reference:
 
 LIBVIRT_URI=$LIBVIRT_URI
-#LIBVIRT_STORAGE=$LIBVIRT_STORAGE
 LIBVIRT_NETWORK_PREFIX=$LIBVIRT_NETWORK_PREFIX
 LIBVIRT_STORAGE_POOL_BASE=$LIBVIRT_STORAGE_POOL_BASE
 
@@ -110,3 +109,41 @@ else
     sudo virsh pool-start $CLUSTER_NAME
     rm /tmp/pool-tmp.xml
 fi
+
+
+
+echo "############### Check/Create Server VM."
+
+if [ "$(sudo virsh list --all | grep $SERVER_NAME)" == "" ] ; then
+	sudo nice -n 19 virt-install -n $SERVER_NAME \
+		--vcpus 1 \
+		--memory 1024 \
+		--disk /var/lib/libvirt/images/${SERVER_NAME}.qcow2,size=10 \
+		--location $CDROM_ISO_FILE \
+		--os-variant centos7.0 \
+		--network network=default,model=virtio \
+		--initrd-inject=./server.ks \
+	  --extra-args 'ks=file:/server.ks' \
+		--noautoconsole
+
+		echo
+		echo "INFO: VMs will power off after installation. Waiting for it..."
+
+		vms_ready=0
+		while [[ $vms_ready -eq 0 ]] ; do
+			if [ "$(sudo virsh domstate $SERVER_NAME)" == "shut off" ]
+				then
+				 vms_ready=1
+				else
+				 echo -n "."
+				 sleep $DELAY
+				fi
+		done
+		echo ""
+
+	else
+		echo "INFO: Server VM already exists. Delete it if you want to recreate it."
+		echo "INFO: Shutting down the VM due to next step expects it..."
+		sudo virsh shutdown $SERVER_NAME
+		sleep 5
+	fi
