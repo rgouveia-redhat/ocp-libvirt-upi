@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
+
 #
 # Phase 1 - Prepare the infrastrucutre.
 #
+
+# Make sure this script does not kill your laptop.
+/usr/bin/renice +19 -p $$ >/dev/null 2>&1
+/usr/bin/ionice -c2 -n7 -p $$ >/dev/null 2>&1
+
+
+# Interval in seconds to check for VMs availability.
+DELAY=10
 
 
 ### Validate settings.
@@ -128,7 +137,7 @@ fi
 
 ### Check for installation ISO.
 if [ "$BASTION_INSTALL_ISO" != "" ] && [ -f $BASTION_INSTALL_ISO ] ; then
-	echo "INFO: Using '$BASTION_INSTALL_ISO' as the source ISO."
+	echo "INFO: Source: $BASTION_INSTALL_ISO"
 else
 	echo "ERROR: Install ISO not found! Please define BASTION_INSTALL_ISO."
 	exit 2
@@ -141,37 +150,40 @@ if [ -f ./ssh/id_rsa ]; then
 else
     echo "INFO: Generating SSH Keys..."
     mkdir ./ssh
-    ssh-keygen -t ed25519 -f ./ssh/id_rsa -N ''
+    ssh-keygen -t ed25519 -f ./ssh/id_rsa -N '' -C "kubeadmin@${CLUSTER_NAME}.${CLUSTER_DOMAIN}"
     chmod 400 ./ssh/id_rsa*
 fi
 
-exit
-
-echo
-echo "############### Generate new kickstart file."
-echo "INFO: Generating new kickstart files."
-
-ssh_key=$(cat ./ssh_rsa_key.pub)
-
-sed -e "s#SSH_KEY_PLACEHOLDER#${ssh_key}#" templates/server.ks.tpl > ./server.ks
-if ! [ $? -eq 0 ]; then
-	echo "ERROR: Error generating kickstart file"
-	exit 5
-fi
 
 # Create bastion vm.
 if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-bastion)" != "" ] ; then
     echo "INFO: Bastion VM already exists."
 else
-    # Variant. Check with ''
+    # Variant. Check with 'osinfo-query os'.
     variant='centos8'
+    ks='files.phase1/centos.ks.tpl'
     if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
         variant='rhel8.5'
+        ks='files.phase1/redhat.ks.tpl'
     fi
     if [ "$BASTION_INSTALL_TYPE" == "fedora" ]; then
         variant='fedora35'
+        ks='files.phase1/fedora.ks.tpl'
     fi
 
+    # Generate kickstart file.
+    ssh_key=$(cat ./ssh/id_rsa.pub)
+    sed \
+        -e "s#\${CLUSTER_NAME}#$CLUSTER_NAME#" \
+        -e "s#\${CLUSTER_DOMAIN}#$CLUSTER_DOMAIN#" \
+        -e "s#\${SSH_KEY}#$ssh_key#" \
+        $ks > files.phase1/anaconda.ks
+    if ! [ $? -eq 0 ]; then
+        echo "ERROR: Error generating kickstart file"
+        exit 5
+    fi
+
+    # Create vm with default NAT network.
 	sudo nice -n 19 virt-install --name ${CLUSTER_NAME}-bastion \
         --cpu host \
 		--vcpus $BASTION_CPUS \
@@ -180,11 +192,18 @@ else
 		--location $BASTION_INSTALL_ISO \
 		--os-variant $variant \
 		--network network=default,model=virtio \
-		--initrd-inject=./server.ks \
-	    --extra-args 'ks=file:/server.ks' \
+		--initrd-inject files.phase1/anaconda.ks \
+	    --extra-args 'ks=file:/anaconda.ks console=tty0 console=ttyS0,115200n8' \
 		--noautoconsole
 
-    echo
+    if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
+        echo "
+[ACTION REQUIRED] Open a console to the bastion vm and 
+                  complete the Red Hat Network authentication!
+                  Close the virt-viewer window when done."
+        sudo virt-viewer ${CLUSTER_NAME}-bastion
+    fi
+
     echo "INFO: VMs will power off after installation. Waiting for it..."
 
     vms_ready=0
@@ -196,5 +215,8 @@ else
             sleep $DELAY
         fi
     done
+    echo
 
+    # Add network interface in the isolated network.
+    sudo virsh attach-interface ${CLUSTER_NAME}-bastion network $CLUSTER_NAME --model virtio --persistent
 fi

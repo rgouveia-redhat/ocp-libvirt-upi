@@ -1,4 +1,5 @@
 ssh/*
+files.phase1/anaconda.ks
 
 # http://www.gnu.org/software/automake
 
