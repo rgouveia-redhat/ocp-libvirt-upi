@@ -36,8 +36,6 @@ DISCONNECTED=$DISCONNECTED
 BASTION_INSTALL_TYPE=$BASTION_INSTALL_TYPE
 BASTION_INSTALL_ISO=$BASTION_INSTALL_ISO
 
-(If redhat)> REDHAT_SUBSCRIPTION_POOL=$REDHAT_SUBSCRIPTION_POOL
-
 BASTION_DISK_SIZE=$BASTION_DISK_SIZE
 BASTION_CPUS=$BASTION_CPUS
 BASTION_MEMORY_SIZE=$BASTION_MEMORY_SIZE
@@ -230,11 +228,15 @@ fi
 
 
 ### Start bastion and wait for ip address.
-sudo virsh start ${CLUSTER_NAME}-bastion
+if [ "$(sudo virsh domstate c4-bastion)" != "running" ]; then
+    sudo virsh start ${CLUSTER_NAME}-bastion
+fi
 
 bastion_ip=""
 while [ "$bastion_ip" == "" ]; do
 	bastion_ip=$(sudo virsh domifaddr ${CLUSTER_NAME}-bastion | egrep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
+    #echo "Waiting for bastion IP..."
+    #sleep $DELAY
 done
 echo "INFO: Bastion IP: $bastion_ip"
 
@@ -242,7 +244,10 @@ echo "INFO: Bastion IP: $bastion_ip"
 ### Create hosts file for Ansible.
 echo "INFO: Generating the Ansible hosts file..."
 
-cat <<EOF > files.phase1/hosts
+mkdir -p files.phase1/ansible/
+cd files.phase1/ansible/
+
+cat <<EOF > hosts
 [bastion]
 $bastion_ip hostname=${CLUSTER_NAME}-bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
 EOF
@@ -253,16 +258,16 @@ echo "INFO: Waiting for SSH to be ready on bastion vm..."
 
 ready=0
 while [ $ready -eq 0 ]; do
-	echo -n "."
 	ssh -q \
 		-o BatchMode=yes \
 		-o ConnectTimeout=10 \
 		-o UserKnownHostsFile=/dev/null \
 		-o StrictHostKeyChecking=no \
-		-i ./ssh/id_rsa root@${bastion_ip} exit
+		-i ../../ssh/id_rsa root@${bastion_ip} exit
 	if [ $? -eq 0 ]; then
 		ready=1
 	else
+	    echo -n "."
 		sleep 5
 	fi
 done
@@ -270,17 +275,17 @@ echo
 
 echo "INFO: Check to make sure Ansible can proceed."
 ansible \
-	--private-key=./ssh/id_rsa \
+	--private-key=../../ssh/id_rsa \
 	--ssh-extra-args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
-	-u root -i files.phase1/hosts all -m ping
+	-u root -i hosts all -m ping
 
 if [ $? -eq 0 ]; then
 	echo "INFO: Running Ansible Playbook to configure Systems..."
 
 	ansible-playbook \
-		--private-key=./ssh/id_rsa \
+		--private-key=../../ssh/id_rsa \
 		--ssh-extra-args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
-		-u root -i hosts files.phase1/bastion.yaml
+		-u root -i hosts bastion.yaml
 else
 	echo "ERROR: Ansible test failed. Fix the issue and run this command again."
 	exit 100
