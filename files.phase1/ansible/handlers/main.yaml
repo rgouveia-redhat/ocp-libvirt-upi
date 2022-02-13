@@ -1,0 +1,10 @@
+---
+- name: restart sshd
+  systemd:
+    name: sshd.service
+    state: restarted
+
+- name: restart httpd
+  systemd:
+    name: httpd.service
+    state: restarted

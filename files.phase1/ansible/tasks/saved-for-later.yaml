@@ -1,0 +1,85 @@
+- name: Create public NFS folder
+  file:
+    path: /public
+    state: directory
+    owner: nfsnobody
+    group: nfsnobody
+    mode: 0755
+
+- name: Create NFS configuration
+  copy:
+    src: files/server/exports
+    dest: /etc/
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart nfs-server
+
+- name: Enable and start NFS service
+  systemd:
+    name: nfs-server.service
+    enabled: true
+    state: started
+
+
+- name: Install needed package iSCSI target
+  yum:
+    name: targetcli
+    state: latest
+
+- name: Check iSCSI target
+  shell: /usr/bin/targetcli /backstores/fileio ls
+  register: disk
+  changed_when: false
+  ignore_errors: yes
+
+- block:
+    - name: Create iSCSI
+      shell: /usr/bin/targetcli /backstores/fileio/ create disk01 /disk01.img 1G
+    - shell: /usr/bin/targetcli /iscsi create iqn.2018-03.com.example:target01
+    - shell: /usr/bin/targetcli /iscsi/iqn.2018-03.com.example:target01/tpg1/luns create /backstores/fileio/disk01
+    - shell: /usr/bin/targetcli /iscsi/iqn.2018-03.com.example:target01/tpg1/acls create iqn.2018-03.com.example:client
+  when: disk.stdout.find('write-back activated') == -1
+
+- name: Enable and start iSCSI target service
+  systemd:
+    name: target.service
+    enabled: true
+    state: started
+
+
+- name: Add sample index.html folder
+  file:
+    path: /var/www/html/files
+    state: directory
+    owner: apache
+    group: apache
+    mode: 0755
+
+- name: Add sample index.html
+  copy:
+    src: files/server/index.html
+    dest: /var/www/html/files
+    owner: apache
+    group: apache
+    mode: 0644
+
+
+- name: Configure Firewalld
+  firewalld:
+    service: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+  with_items:
+    - ldap
+    - ldaps
+    - http
+    - https
+    - ntp
+    - samba
+    - nfs
+    - rpc-bind
+    - mountd
+    - iscsi-target

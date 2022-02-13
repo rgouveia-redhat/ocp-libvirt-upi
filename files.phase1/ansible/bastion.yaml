@@ -1,0 +1,8 @@
+- name: Bastion Tasks
+  hosts: bastion
+
+  handlers:
+    - import_tasks: handlers/main.yaml
+
+  tasks:
+    - import_tasks: tasks/bastion.yaml

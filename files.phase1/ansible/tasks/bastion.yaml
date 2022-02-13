@@ -1,0 +1,28 @@
+---
+- name: Update Server
+  yum:
+    name: '*'
+    state: latest
+    update_cache: yes
+  register: updated
+
+
+# Reboot server and wait for SSH readiness
+- block:
+    - name: Reboot Server
+      command: shutdown +1 -r
+
+    - name: Wait for reboot cycle
+      wait_for:
+        delay: 70
+        host: "{{ inventory_hostname }}"
+        port: 22
+        state: started
+      delegate_to: localhost
+  when: updated.changed == true
+
+
+- name: Install utils packages
+  yum:
+    name: ['bash-completion', 'vim', 'haproxy']
+    state: installed
