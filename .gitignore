@@ -1,6 +1,6 @@
 ssh/*
 files.phase1/anaconda.ks
-files.phase1/hosts
+files.phase1/ansible/hosts
 
 # http://www.gnu.org/software/automake
 
