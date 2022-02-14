@@ -1,0 +1,50 @@
+options {
+	directory 	"/var/named";
+	dump-file 	"/var/named/data/cache_dump.db";
+	statistics-file "/var/named/data/named_stats.txt";
+	memstatistics-file "/var/named/data/named_mem_stats.txt";
+	secroots-file	"/var/named/data/named.secroots";
+	recursing-file	"/var/named/data/named.recursing";
+
+	forwarders {
+		{{ dns_forwarders }};
+    };
+	forward first;
+
+	dnssec-enable no;
+	dnssec-validation no;
+
+	//managed-keys-directory "/var/named/dynamic";
+
+	pid-file "/run/named/named.pid";
+	session-keyfile "/run/named/session.key";
+
+	/* https://fedoraproject.org/wiki/Changes/CryptoPolicy */
+	include "/etc/crypto-policies/back-ends/bind.config";
+};
+
+logging {
+        channel default_debug {
+                file "data/named.run";
+                severity dynamic;
+        };
+};
+
+zone "." IN {
+	type hint;
+	file "named.ca";
+};
+
+include "/etc/named.rfc1912.zones";
+include "/etc/named.root.key";
+
+
+zone "{{ cluster_domain }}" IN {
+	type master;
+	file "dynamic/{{ cluster_domain }}.db";
+};
+
+zone "{{ network_reverse }}.in-addr.arpa" in {
+	type master;
+	file "dynamic/{{ network_reverse }}.in-addr.arpa.db";
+};

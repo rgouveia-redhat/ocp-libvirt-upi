@@ -1,0 +1,25 @@
+default menu.c32
+prompt 0
+timeout 300
+ontimeout 4
+
+menu title OpenShift Container Platform 4.9.9
+
+LABEL 1
+  menu label ^1 - Install Bootstrap
+  KERNEL http://mirror.ocp.com/rhcos-4.9.0-x86_64-live-kernel-x86_64
+  APPEND initrd=http://mirror.ocp.com/rhcos-4.9.0-x86_64-live-initramfs.x86_64.img coreos.live.rootfs_url=http://mirror.ocp.com/rhcos-4.9.0-x86_64-live-rootfs.x86_64.img coreos.inst.install_dev=/dev/vda coreos.inst.ignition_url=http://mirror.ocp.com/c499/bootstrap.ign
+
+LABEL 2
+  menu label ^2 - Install Master
+  KERNEL http://mirror.ocp.com/rhcos-4.9.0-x86_64-live-kernel-x86_64
+  APPEND initrd=http://mirror.ocp.com/rhcos-4.9.0-x86_64-live-initramfs.x86_64.img coreos.live.rootfs_url=http://mirror.ocp.com/rhcos-4.9.0-x86_64-live-rootfs.x86_64.img coreos.inst.install_dev=/dev/vda coreos.inst.ignition_url=http://mirror.ocp.com/c499/master.ign
+
+LABEL 3
+  menu label ^3 - Install Worker
+  KERNEL http://mirror.ocp.com/rhcos-4.9.0-x86_64-live-kernel-x86_64
+  APPEND initrd=http://mirror.ocp.com/rhcos-4.9.0-x86_64-live-initramfs.x86_64.img coreos.live.rootfs_url=http://mirror.ocp.com/rhcos-4.9.0-x86_64-live-rootfs.x86_64.img coreos.inst.install_dev=/dev/vda coreos.inst.ignition_url=http://mirror.ocp.com/c499/worker.ign
+
+label 4
+  menu label ^4 - Boot from local media
+  localboot 0x80

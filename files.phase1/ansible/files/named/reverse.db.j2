@@ -1,0 +1,27 @@
+$TTL	30 ; ONLY THIS SHORT FOR TESTING, changes are cached this long
+@  1D  IN	 SOA ns1.{{ cluster_domain }}.	dnsmaster.{{ cluster_domain }}. (
+			      2002022401 ; serial
+			      3H ; refresh
+			      15 ; retry
+			      1w ; expire
+			      3h ; minimum
+			     )
+		IN	NS	ns1.{{ cluster_domain }}.
+
+; server host definitions
+
+$ORIGIN 100.168.192.IN-ADDR.ARPA.
+
+3     IN    PTR    bastion.{{ cluster_name }}.{{ cluster_domain }}.
+3     IN    PTR    api.{{ cluster_name }}.{{ cluster_domain }}.
+3     IN    PTR    api-int.{{ cluster_name }}.{{ cluster_domain }}.
+
+9     IN    PTR    bootstrap.{{ cluster_name }}.{{ cluster_domain }}.
+
+10    IN    PTR    master1.{{ cluster_name }}.{{ cluster_domain }}.
+11    IN    PTR    master2.{{ cluster_name }}.{{ cluster_domain }}.
+12    IN    PTR    master3.{{ cluster_name }}.{{ cluster_domain }}.
+
+20    IN    PTR    worker1.{{ cluster_name }}.{{ cluster_domain }}.
+21    IN    PTR    worker2.{{ cluster_name }}.{{ cluster_domain }}.
+22    IN    PTR    worker3.{{ cluster_name }}.{{ cluster_domain }}.

@@ -253,6 +253,21 @@ $bastion_ip hostname=${CLUSTER_NAME}-bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
 EOF
 
 
+### Prepare Ansible vars file.
+echo "INFO: Generating the Ansible vars file..."
+
+reverse=$(echo $LIBVIRT_NETWORK_PREFIX | awk -F. '{print $3 "." $2 "." $1}')
+echo "---
+network_prefix: '$LIBVIRT_NETWORK_PREFIX'
+network_reverse: '$reverse'
+disconnected: '$DISCONNECTED'
+cluster_version: '$CLUSTER_VERSION'
+cluster_name: '$CLUSTER_NAME'
+cluster_domain: '$CLUSTER_DOMAIN'
+dns_forwarders: '$DNS_FORWARDERS'
+" > ./vars/common.yaml
+
+
 ### Use Ansible to configure bastion vm.
 echo "INFO: Waiting for SSH to be ready on bastion vm..."
 

@@ -1,0 +1,32 @@
+$ORIGIN .
+$TTL 30	; ONLY THIS SHORT FOR TESTING, changes are cached this long
+{{ cluster_domain }}		IN SOA	ns1.{{ cluster_domain }}. hostmaster.{{ cluster_domain }}. (
+				2021011901 ; serial
+				60         ; refresh (1 minute)
+				15         ; retry (15 seconds)
+				1800       ; expire (30 minutes)
+				10         ; minimum (10 seconds)
+				)
+
+		NS	ns1.{{ cluster_domain }}.
+
+$ORIGIN {{ cluster_domain }}.
+
+ns1		    A	127.0.0.1
+
+$ORIGIN {{ cluster_name }}.{{ cluster_domain }}.
+
+bastion		IN A	{{ network_prefix }}.3
+api         IN A 	{{ network_prefix }}.3
+api-int		IN A 	{{ network_prefix }}.3
+*.apps		IN A 	{{ network_prefix }}.3
+
+bootstrap	IN A 	{{ network_prefix }}.9
+
+master1		IN A 	{{ network_prefix }}.10
+master2		IN A 	{{ network_prefix }}.11
+master3		IN A 	{{ network_prefix }}.12
+
+worker1		IN A 	{{ network_prefix }}.20
+worker2		IN A 	{{ network_prefix }}.21
+worker3		IN A	{{ network_prefix }}.22

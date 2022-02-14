@@ -1,5 +1,10 @@
+---
+
 - name: Bastion Tasks
   hosts: bastion
+
+  vars_files:
+    - vars/common.yaml
 
   handlers:
     - import_tasks: handlers/main.yaml

@@ -23,3 +23,6 @@ BASTION_INSTALL_TYPE='redhat'
 BASTION_INSTALL_ISO='/var/lib/libvirt/images/rhel-8.5-x86_64-boot.iso'
 #BASTION_INSTALL_ISO='centos todo'
 #BASTION_INSTALL_ISO='/var/lib/libvirt/images/Fedora-Server-dvd-x86_64-34-1.2.iso'
+
+# If more than one, separate with ';'
+DNS_FORWARDERS='192.168.1.254'
