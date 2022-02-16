@@ -23,10 +23,29 @@
   when: updated.changed == true
 
 
+# Configure second interface.
+- name: Create bastion cluster connection
+  community.general.nmcli:
+    autoconnect: yes
+    conn_name: cluster
+    method4: auto
+    method6: disabled
+    state: present
+    type: ethernet
+
+
 - name: Install needed packages
-  yum:
-    name: ['bash-completion', 'vim', 'haproxy', 'ca-certificates', 'skopeo', 'wget', 'bind']
-    state: installed
+  ansible.builtin.package:
+    name:
+      - bash-completion
+      - vim
+      - haproxy
+      - ca-certificates
+      - skopeo
+      - wget
+      - bind
+      - dhcp-server
+    state: present
 
 
 # named: ips and names.
@@ -71,6 +90,21 @@
 
 # dhcpd: ips, names and mac addresses.
 # /etc/dhcp/dhcpd.conf
+
+- name: Configure /etc/dhcp/dhcpd.conf
+  ansible.builtin.template:
+    src: files/dhcpd.conf.j2
+    dest: /etc/dhcp/dhcpd.conf
+    owner: root
+    group: root
+    mode: '0640'
+    backup: no
+
+- name: restart and enable dhcpd.service
+  ansible.builtin.systemd:
+    name: dhcpd.service
+    state: restarted
+    enabled: yes
 
 # httpd: port 81, ignition and pxe files.
 # ?

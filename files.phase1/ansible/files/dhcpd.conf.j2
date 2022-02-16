@@ -1,14 +1,8 @@
-#
-# DHCP Server Configuration file.
-#   see /usr/share/doc/dhcp-server/dhcpd.conf.example
-#   see dhcpd.conf(5) man page
-#
-
 allow bootp;
 allow booting;
+
 #max-lease-time 1200;
 #default-lease-time 900;
-
 max-lease-time -1;
 default-lease-time -1;
 
@@ -17,63 +11,63 @@ log-facility local7;
 option ip-forwarding    false;
 option mask-supplier    false;
 
-subnet 192.168.100.0 netmask 255.255.255.0 {
+subnet {{ network_prefix }}.0 netmask 255.255.255.0 {
 
-    option  routers  192.168.100.1;
+    option  routers  {{ network_prefix }}.1;
     option  subnet-mask  255.255.255.0;
-    option  domain-name-servers  192.168.100.1;
-    option  domain-search  "ocp.com";
-    range   192.168.100.100 192.168.100.254;
+    option  domain-name-servers  {{ network_prefix }}.3;
+    option  domain-search  "{{ cluster_domain }}";
+    range   {{ network_prefix }}.100 {{ network_prefix }}.254;
 
-    next-server 192.168.100.3;
+    next-server {{ network_prefix }}.3;
     filename "pxelinux.0";
 
-    host lb {
-        option host-name "lb.c499.ocp.com";
-        hardware ethernet 52:54:00:36:b1:7f;
-        fixed-address 192.168.100.9;
+    host bastion {
+        option host-name "bastion.{{ cluster_name }}.{{ cluster_domain }}";
+        hardware ethernet {{ mac_bastion }};
+        fixed-address {{ network_prefix }}.3;
     }
 
     host bootstrap {
-        option host-name "bootstrap.c499.ocp.com";
-        hardware ethernet 52:54:00:ab:f9:99;
-        fixed-address 192.168.100.10;
+        option host-name "bootstrap.{{ cluster_name }}.{{ cluster_domain }}";
+        hardware ethernet {{ mac_bootstrap }};
+        fixed-address {{ network_prefix }}.9;
     }
 
     host master1 {
-        option host-name "master1.c499.ocp.com";
-        hardware ethernet 52:54:00:c0:dc:3d;
-        fixed-address 192.168.100.11;
+        option host-name "master1.{{ cluster_name }}.{{ cluster_domain }}";
+        hardware ethernet {{ mac_master1 }};
+        fixed-address {{ network_prefix }}.10;
     }
 
     host master2 {
-        option host-name "master2.c499.ocp.com";
-        hardware ethernet 52:54:00:e6:e9:55;
-        fixed-address 192.168.100.12;
+        option host-name "master2.{{ cluster_name }}.{{ cluster_domain }}";
+        hardware ethernet {{ mac_master2 }};
+        fixed-address {{ network_prefix }}.11;
     }
 
     host master3 {
-        option host-name "master3.c499.ocp.com";
-        hardware ethernet 52:54:00:ad:b3:42;
-        fixed-address 192.168.100.13;
+        option host-name "master3.{{ cluster_name }}.{{ cluster_domain }}";
+        hardware ethernet {{ mac_master3 }};
+        fixed-address {{ network_prefix }}.12;
     }
 
     host worker1 {
-        option host-name "worker1.c499.ocp.com";
-        hardware ethernet 52:54:00:02:0e:9f;
-        fixed-address 192.168.100.20;
+        option host-name "worker1.{{ cluster_name }}.{{ cluster_domain }}";
+        hardware ethernet {{ mac_worker1 }};
+        fixed-address {{ network_prefix }}.20;
     }
 
     host worker2 {
-        option host-name "worker2.c499.ocp.com";
-        hardware ethernet 52:54:00:36:b5:ae;
-        fixed-address 192.168.100.21;
+        option host-name "worker2.{{ cluster_name }}.{{ cluster_domain }}";
+        hardware ethernet {{ mac_worker2 }};
+        fixed-address {{ network_prefix }}.21;
     }
 
     host worker3 {
-        option host-name "worker3.c499.ocp.com";
-        hardware ethernet 52:54:00:04:f4:dd;
-        fixed-address 192.168.100.22;
+        option host-name "worker3.{{ cluster_name }}.{{ cluster_domain }}";
+        hardware ethernet {{ mac_worker3 }};
+        fixed-address {{ network_prefix }}.22;
     }
 
 }

@@ -36,9 +36,23 @@ DISCONNECTED=$DISCONNECTED
 BASTION_INSTALL_TYPE=$BASTION_INSTALL_TYPE
 BASTION_INSTALL_ISO=$BASTION_INSTALL_ISO
 
+DNS_FORWARDERS=$DNS_FORWARDERS
+
 BASTION_DISK_SIZE=$BASTION_DISK_SIZE
 BASTION_CPUS=$BASTION_CPUS
 BASTION_MEMORY_SIZE=$BASTION_MEMORY_SIZE
+
+BOOTSTRAP_DISK_SIZE=$BOOTSTRAP_DISK_SIZE
+BOOTSTRAP_CPUS=$BOOTSTRAP_CPUS
+BOOTSTRAP_MEMORY_SIZE=$BOOTSTRAP_MEMORY_SIZE
+
+MASTER_DISK_SIZE=$MASTER_DISK_SIZE
+MASTER_CPUS=$MASTER_CPUS
+MASTER_MEMORY_SIZE=$MASTER_MEMORY_SIZE
+
+WORKER_DISK_SIZE=$WORKER_DISK_SIZE
+WORKER_CPUS=$WORKER_CPUS
+WORKER_MEMORY_SIZE=$WORKER_MEMORY_SIZE
 
 
 Do you want to continue? Press Enter or CTRL+C to abort."
@@ -198,7 +212,7 @@ else
 		--os-variant $variant \
 		--network network=default,model=virtio \
 		--initrd-inject files.phase1/anaconda.ks \
-	    --extra-args 'ks=file:/anaconda.ks console=tty0 console=ttyS0,115200n8' \
+	    --extra-args 'ks=file:/anaconda.ks' \
 		--noautoconsole
 
     if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
@@ -223,7 +237,8 @@ else
     echo
 
     # Add network interface in the isolated network.
-    sudo virsh attach-interface ${CLUSTER_NAME}-bastion network $CLUSTER_NAME --model virtio --persistent
+    echo "INFO: Attaching isolated interface in bastion vm..."
+    sudo virsh attach-interface ${CLUSTER_NAME}-bastion network $CLUSTER_NAME --model virtio --persistent  
 fi
 
 
@@ -268,6 +283,105 @@ dns_forwarders: '$DNS_FORWARDERS'
 " > ./vars/common.yaml
 
 
+## Extract cluster vms mac addresses. 
+
+# Add bastion mac address.
+if [ "$(grep mac_bastion ./vars/common.yaml)" == "" ]; then
+    mac=$(sudo virsh domiflist ${CLUSTER_NAME}-bastion | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
+    echo "mac_bastion: '$mac'" >> ./vars/common.yaml
+fi
+
+# Create bootstrap vm.
+if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-bootstrap)" != "" ]; then
+    echo "INFO: Bootstrap VM already exists."
+else
+    # Variant. Check with 'osinfo-query os'.
+    variant='rhel8.5'
+
+    # Create vm in cluster network.
+	sudo nice -n 19 virt-install --name ${CLUSTER_NAME}-bootstrap \
+        --cpu host \
+		--vcpus $BOOTSTRAP_CPUS \
+		--memory $BOOTSTRAP_MEMORY_SIZE \
+		--disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-bootstrap.qcow2,size=$BOOTSTRAP_DISK_SIZE \
+		--pxe \
+        --boot network,hd,menu=off \
+		--os-variant $variant \
+		--network network=${CLUSTER_NAME},model=virtio \
+		--noautoconsole
+
+    sudo virsh destroy ${CLUSTER_NAME}-bootstrap
+fi
+
+if [ "$(grep mac_bootstrap ./vars/common.yaml)" == "" ]; then
+    mac=$(sudo virsh domiflist ${CLUSTER_NAME}-bootstrap | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
+    echo "mac_bootstrap: '$mac'" >> ./vars/common.yaml
+fi
+
+# Create masters vm.
+for i in {1..3}; do
+    if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-master$i)" != "" ]; then
+        echo "INFO: Master$i VM already exists."
+    else
+        # Variant. Check with 'osinfo-query os'.
+        variant='rhel8.5'
+
+        # Create vm in cluster network.
+        sudo nice -n 19 virt-install --name ${CLUSTER_NAME}-master$i \
+            --cpu host \
+            --vcpus $MASTER_CPUS \
+            --memory $MASTER_MEMORY_SIZE \
+            --disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-master$i.qcow2,size=$MASTER_DISK_SIZE \
+            --pxe \
+            --boot network,hd,menu=off \
+            --os-variant $variant \
+            --network network=${CLUSTER_NAME},model=virtio \
+            --noautoconsole
+
+        sudo virsh destroy ${CLUSTER_NAME}-master$i
+    fi
+done
+
+for i in {1..3}; do
+    if [ "$(grep mac_master$i ./vars/common.yaml)" == "" ]; then
+        mac=$(sudo virsh domiflist ${CLUSTER_NAME}-master$i | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
+        echo "mac_master$i: '$mac'" >> ./vars/common.yaml
+    fi
+done
+
+# Create workers vms.
+for i in {1..3}; do
+    if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-worker$i)" != "" ]; then
+        echo "INFO: Worker$i VM already exists."
+    else
+        # Variant. Check with 'osinfo-query os'.
+        variant='rhel8.5'
+
+        # Create vm in cluster network.
+        sudo nice -n 19 virt-install --name ${CLUSTER_NAME}-worker$i \
+            --cpu host \
+            --vcpus $WORKER_CPUS \
+            --memory $WORKER_MEMORY_SIZE \
+            --disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-worker$i.qcow2,size=$WORKER_DISK_SIZE \
+            --pxe \
+            --boot network,hd,menu=off \
+            --os-variant $variant \
+            --network network=${CLUSTER_NAME},model=virtio \
+            --noautoconsole
+
+        sudo virsh destroy ${CLUSTER_NAME}-worker$i
+    fi
+done
+
+for i in {1..3}; do
+    if [ "$(grep mac_worker$i ./vars/common.yaml)" == "" ]; then
+        mac=$(sudo virsh domiflist ${CLUSTER_NAME}-worker$i | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
+        echo "mac_worker$i: '$mac'" >> ./vars/common.yaml
+    fi
+done
+
+
+
 ### Use Ansible to configure bastion vm.
 echo "INFO: Waiting for SSH to be ready on bastion vm..."
 
@@ -287,6 +401,8 @@ while [ $ready -eq 0 ]; do
 	fi
 done
 echo
+
+#ansible-galaxy collection install community.general
 
 echo "INFO: Check to make sure Ansible can proceed."
 ansible \
