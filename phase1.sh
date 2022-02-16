@@ -211,6 +211,7 @@ else
 		--location $BASTION_INSTALL_ISO \
 		--os-variant $variant \
 		--network network=default,model=virtio \
+        --network network=${CLUSTER_NAME},model=virtio \
 		--initrd-inject files.phase1/anaconda.ks \
 	    --extra-args 'ks=file:/anaconda.ks' \
 		--noautoconsole
@@ -235,10 +236,6 @@ else
         fi
     done
     echo
-
-    # Add network interface in the isolated network.
-    echo "INFO: Attaching isolated interface in bastion vm..."
-    sudo virsh attach-interface ${CLUSTER_NAME}-bastion network $CLUSTER_NAME --model virtio --persistent  
 fi
 
 
