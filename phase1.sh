@@ -211,9 +211,9 @@ else
 		--location $BASTION_INSTALL_ISO \
 		--os-variant $variant \
 		--network network=default,model=virtio \
-        --network network=${CLUSTER_NAME},model=virtio \
+		--network network=${CLUSTER_NAME},model=virtio \
 		--initrd-inject files.phase1/anaconda.ks \
-	    --extra-args 'ks=file:/anaconda.ks' \
+		--extra-args 'inst.ks=file:/anaconda.ks' \
 		--noautoconsole
 
     if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
@@ -283,10 +283,12 @@ dns_forwarders: '$DNS_FORWARDERS'
 ## Extract cluster vms mac addresses. 
 
 # Add bastion mac address.
-if [ "$(grep mac_bastion ./vars/common.yaml)" == "" ]; then
-    mac=$(sudo virsh domiflist ${CLUSTER_NAME}-bastion | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
-    echo "mac_bastion: '$mac'" >> ./vars/common.yaml
-fi
+### BUG: Because bastion has two nics, if the name is part of the other mac, this produces two results.
+### FIX: grep -v default. However, this nic has static ip, considering removing bastion mac var.
+#if [ "$(grep mac_bastion ./vars/common.yaml)" == "" ]; then
+#    mac=$(sudo virsh domiflist ${CLUSTER_NAME}-bastion | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
+#    echo "mac_bastion: '$mac'" >> ./vars/common.yaml
+#fi
 
 # Create bootstrap vm.
 if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-bootstrap)" != "" ]; then

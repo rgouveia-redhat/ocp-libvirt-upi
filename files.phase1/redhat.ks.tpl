@@ -20,6 +20,7 @@ lang en_GB.UTF-8
 
 # Network information
 network  --bootproto=dhcp --device=enp1s0 --noipv6 --activate
+network  --bootproto=static --device=enp2s0 --gateway=${LIBVIRT_NETWORK_PREFIX}.1 --ip=${LIBVIRT_NETWORK_PREFIX}.3 --nameserver=${LIBVIRT_NETWORK_PREFIX}.3,${LIBVIRT_NETWORK_PREFIX}.1 --netmask=255.255.255.0 --noipv6 --activate
 network  --hostname=bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
 
 # Run the Setup Agent on first boot

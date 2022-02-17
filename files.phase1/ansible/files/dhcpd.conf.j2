@@ -22,11 +22,11 @@ subnet {{ network_prefix }}.0 netmask 255.255.255.0 {
     next-server {{ network_prefix }}.3;
     filename "pxelinux.0";
 
-    host bastion {
-        option host-name "bastion.{{ cluster_name }}.{{ cluster_domain }}";
-        hardware ethernet {{ mac_bastion }};
-        fixed-address {{ network_prefix }}.3;
-    }
+#    host bastion {
+#        option host-name "bastion.{{ cluster_name }}.{{ cluster_domain }}";
+#        hardware ethernet { { mac_bastion } };
+#        fixed-address {{ network_prefix }}.3;
+#    }
 
     host bootstrap {
         option host-name "bootstrap.{{ cluster_name }}.{{ cluster_domain }}";
