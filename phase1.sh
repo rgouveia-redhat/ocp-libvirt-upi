@@ -32,6 +32,7 @@ CLUSTER_DOMAIN=$CLUSTER_DOMAIN
 CLUSTER_NAME=$CLUSTER_NAME
 CLUSTER_VERSION=$CLUSTER_VERSION
 DISCONNECTED=$DISCONNECTED
+OPENSHIFT_MIRROR_BASE=$OPENSHIFT_MIRROR_BASE
 
 BASTION_INSTALL_TYPE=$BASTION_INSTALL_TYPE
 BASTION_INSTALL_ISO=$BASTION_INSTALL_ISO
@@ -273,6 +274,7 @@ echo "---
 network_prefix: '$LIBVIRT_NETWORK_PREFIX'
 network_reverse: '$reverse'
 disconnected: '$DISCONNECTED'
+openshift_mirror_base: '$OPENSHIFT_MIRROR_BASE'
 cluster_version: '$CLUSTER_VERSION'
 cluster_name: '$CLUSTER_NAME'
 cluster_domain: '$CLUSTER_DOMAIN'
@@ -402,6 +404,7 @@ done
 echo
 
 #ansible-galaxy collection install community.general
+ansible-galaxy collection install ansible.posix
 
 echo "INFO: Check to make sure Ansible can proceed."
 ansible \

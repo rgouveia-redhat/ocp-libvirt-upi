@@ -71,31 +71,31 @@ frontend stats
 listen api-server-6443
   bind *:6443
   mode tcp
-  server bootstrap bootstrap.CLUSTER_NAME.CLUSTER_DOMAIN:6443 check inter 1s backup
-  server master1 master1.CLUSTER_NAME.CLUSTER_DOMAIN:6443 check inter 1s
-  server master2 master2.CLUSTER_NAME.CLUSTER_DOMAIN:6443 check inter 1s
-  server master3 master3.CLUSTER_NAME.CLUSTER_DOMAIN:6443 check inter 1s
+  server bootstrap bootstrap.{{ cluster_name }}.{{ cluster_domain }}:6443 check inter 1s backup
+  server master1 master1.{{ cluster_name }}.{{ cluster_domain }}:6443 check inter 1s
+  server master2 master2.{{ cluster_name }}.{{ cluster_domain }}:6443 check inter 1s
+  server master3 master3.{{ cluster_name }}.{{ cluster_domain }}:6443 check inter 1s
 
 listen machine-config-server-22623
   bind *:22623
   mode tcp
-  server bootstrap bootstrap.CLUSTER_NAME.CLUSTER_DOMAIN:22623 check inter 1s backup
-  server master1 master1.CLUSTER_NAME.CLUSTER_DOMAIN:22623 check inter 1s
-  server master2 master2.CLUSTER_NAME.CLUSTER_DOMAIN:22623 check inter 1s
-  server master3 master3.CLUSTER_NAME.CLUSTER_DOMAIN:22623 check inter 1s
+  server bootstrap bootstrap.{{ cluster_name }}.{{ cluster_domain }}:22623 check inter 1s backup
+  server master1 master1.{{ cluster_name }}.{{ cluster_domain }}:22623 check inter 1s
+  server master2 master2.{{ cluster_name }}.{{ cluster_domain }}:22623 check inter 1s
+  server master3 master3.{{ cluster_name }}.{{ cluster_domain }}:22623 check inter 1s
 
 listen ingress-router-443
   bind *:443
   mode tcp
   balance source
-  server worker1 worker1.CLUSTER_NAME.CLUSTER_DOMAIN:443 check inter 1s
-  server worker2 worker2.CLUSTER_NAME.CLUSTER_DOMAIN:443 check inter 1s
-  server worker3 worker3.CLUSTER_NAME.CLUSTER_DOMAIN:443 check inter 1s
+  server worker1 worker1.{{ cluster_name }}.{{ cluster_domain }}:443 check inter 1s
+  server worker2 worker2.{{ cluster_name }}.{{ cluster_domain }}:443 check inter 1s
+  server worker3 worker3.{{ cluster_name }}.{{ cluster_domain }}:443 check inter 1s
 
 listen ingress-router-80
   bind *:80
   mode tcp
   balance source
-  server worker1 worker1.CLUSTER_NAME.CLUSTER_DOMAIN:80 check inter 1s
-  server worker2 worker2.CLUSTER_NAME.CLUSTER_DOMAIN:80 check inter 1s
-  server worker3 worker3.CLUSTER_NAME.CLUSTER_DOMAIN:80 check inter 1s
+  server worker1 worker1.{{ cluster_name }}.{{ cluster_domain }}:80 check inter 1s
+  server worker2 worker2.{{ cluster_name }}.{{ cluster_domain }}:80 check inter 1s
+  server worker3 worker3.{{ cluster_name }}.{{ cluster_domain }}:80 check inter 1s

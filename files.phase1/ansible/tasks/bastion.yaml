@@ -37,7 +37,7 @@
       - dhcp-server
       - tftp-server
       - syslinux
-      - http
+      - httpd
     state: present
 
 
@@ -196,9 +196,13 @@
 
 
 # httpd: port 81, ignition and pxe files.
-# ?
+# ignition files postponed for later.
 
-
+- name: Reconfigure httpd service
+  ansible.builtin.replace:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^(Listen)\s+80\s*$'
+    replace: '\1 81'
 
 - name: restart and enable httpd.service
   ansible.builtin.systemd:
@@ -206,9 +210,27 @@
     state: restarted
     enabled: yes
 
+- name: Download file with checksum url (sha256)
+  get_url:
+    url: "{{ item }}"
+    dest: /var/www/html
+    force: no
+    owner: apache
+    group: apache
+    mode: '0664'
+    checksum: sha256:{{ openshift_mirror_base }}/sha256sum.txt
+  with_items:
+    - "{{ openshift_mirror_base }}/rhcos-live-kernel-x86_64"
+    - "{{ openshift_mirror_base }}/rhcos-live-initramfs.x86_64.img"
+    - "{{ openshift_mirror_base }}/rhcos-live-rootfs.x86_64.img"
+
 
 # haproxy ports 80, 443: names.
 # /etc/haproxy/haproxy.cfg
+
+
+
+
 
 # ntp server!!!
 
@@ -229,3 +251,14 @@
     - http
     - https
     - ntp
+
+- name: Permit traffic in port 81/tcp
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    immediate: yes
+    state: enabled
+  with_items:
+    - "81/tcp"
+    - "6443/tcp"
+    - "22623/tcp"

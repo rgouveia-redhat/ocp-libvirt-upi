@@ -8,6 +8,7 @@ DISCONNECTED=true
 CLUSTER_VERSION=4.9.10
 CLUSTER_DOMAIN='ocp.com'
 CLUSTER_NAME='c4'
+OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.9/latest'
 
 # Choose one
 BASTION_INSTALL_TYPE='redhat'
