@@ -407,7 +407,8 @@ while [ $ready -eq 0 ]; do
 done
 echo
 
-#ansible-galaxy collection install community.general
+echo "INFO: Installing Ansible dependencies..."
+ansible-galaxy collection install community.general
 ansible-galaxy collection install ansible.posix
 
 echo "INFO: Check to make sure Ansible can proceed."

@@ -7,7 +7,6 @@
     update_cache: yes
   register: updated
 
-
 # If updated, reboot server and wait for SSH readiness.
 - block:
     - name: Reboot Server
@@ -41,8 +40,30 @@
       - chrony
     state: present
 
+
 # We only want the bastion nameserver as active.
 # Disable the nameserver provided by the "default" network.
+
+# nmcli connection modify enp1s0 ipv4.ignore-auto-dns yes
+### Ideally access server facts and get the connection name.
+
+#- name: Disable the nameserver provided by the "default" network
+#  community.general.nmcli:
+#    conn_name: enp1s0
+#    dns4_ignore_auto: yes
+#    state: present
+#  register: nm
+
+- name: Disable the nameserver provided by the "default" network
+  ansible.builtin.shell: nmcli connection modify enp1s0 ipv4.ignore-auto-dns yes
+  register: nm
+
+- name: restart NetworkManager
+  ansible.builtin.systemd:
+    name: named.service
+    state: restart
+    enabled: yes
+  when: nm.changed == true
 
 
 # named: ips and names.
@@ -240,6 +261,18 @@
     group: root
     mode: '0644'
     backup: no
+
+# semanage port -a -t http_port_t -p tcp 6443
+- name: Allow haproxy to listen on tcp port 6443
+  community.general.seport:
+    ports: "{{ item }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+  with_items:
+    - 1936
+    - 6443
+    - 22623
 
 - name: restart and enable haproxy.service
   ansible.builtin.systemd:
