@@ -38,7 +38,11 @@
       - tftp-server
       - syslinux
       - httpd
+      - chrony
     state: present
+
+# We only want the bastion nameserver as active.
+# Disable the nameserver provided by the "default" network.
 
 
 # named: ips and names.
@@ -77,7 +81,7 @@
 - name: restart and enable named.service
   ansible.builtin.systemd:
     name: named.service
-    state: restarted
+    state: started
     enabled: yes
 
 
@@ -96,7 +100,7 @@
 - name: restart and enable dhcpd.service
   ansible.builtin.systemd:
     name: dhcpd.service
-    state: restarted
+    state: started
     enabled: yes
 
 
@@ -191,7 +195,7 @@
 - name: restart and enable tftp.service
   ansible.builtin.systemd:
     name: tftp.service
-    state: restarted
+    state: started
     enabled: yes
 
 
@@ -207,7 +211,7 @@
 - name: restart and enable httpd.service
   ansible.builtin.systemd:
     name: httpd.service
-    state: restarted
+    state: started
     enabled: yes
 
 - name: Download file with checksum url (sha256)
@@ -228,11 +232,40 @@
 # haproxy ports 80, 443: names.
 # /etc/haproxy/haproxy.cfg
 
+- name: Configure HAProxy
+  ansible.builtin.template:
+    src: files/haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
 
-
+- name: restart and enable haproxy.service
+  ansible.builtin.systemd:
+    name: haproxy.service
+    state: started
+    enabled: yes
 
 
 # ntp server!!!
+# https://www.golinuxcloud.com/configure-chrony-ntp-server-client-force-sync/
+
+- name: Configure NTP as Server
+  ansible.builtin.template:
+    src: files/chrony.conf.j2
+    dest: /etc/chrony.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+- name: restart and enable chronyd.service
+  ansible.builtin.systemd:
+    name: chronyd.service
+    state: started
+    enabled: yes
+
 
 # nfs?
 # iscsi?

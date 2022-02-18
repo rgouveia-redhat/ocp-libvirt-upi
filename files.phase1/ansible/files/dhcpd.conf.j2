@@ -8,6 +8,10 @@ default-lease-time -1;
 
 log-facility local7;
 
+authoritative;
+ignore client-updates;
+
+
 option ip-forwarding    false;
 option mask-supplier    false;
 
@@ -16,6 +20,7 @@ subnet {{ network_prefix }}.0 netmask 255.255.255.0 {
     option  routers  {{ network_prefix }}.1;
     option  subnet-mask  255.255.255.0;
     option  domain-name-servers  {{ network_prefix }}.3;
+    option  ntp-servers  {{ network_prefix }}.3;
     option  domain-search  "{{ cluster_domain }}";
     range   {{ network_prefix }}.100 {{ network_prefix }}.254;
 

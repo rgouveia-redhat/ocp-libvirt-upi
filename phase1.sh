@@ -176,6 +176,10 @@ fi
 
 
 ### Create bastion vm.
+
+#
+### TODO: FIX!!! /home is being created with 30G.
+
 if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-bastion)" != "" ] ; then
     echo "INFO: Bastion VM already exists."
 else
