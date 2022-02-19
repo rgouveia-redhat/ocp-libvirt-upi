@@ -1,9 +1,9 @@
 ssh/*
 start-env.sh
 files.phase1/anaconda.ks
-files.phase1/ansible/hosts
-files.phase1/ansible/facts/*
-files.phase1/ansible/vars/common.yaml
+ansible/hosts
+ansible/facts/*
+ansible/vars/common.yaml
 
 # http://www.gnu.org/software/automake
 
