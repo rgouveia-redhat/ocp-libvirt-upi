@@ -1,4 +1,5 @@
 ssh/*
+start-env.sh
 files.phase1/anaconda.ks
 files.phase1/ansible/hosts
 files.phase1/ansible/facts/*

@@ -427,7 +427,29 @@ else
 fi
 
 
-echo "
-$(date +%T) INFO:
+echo "$(date +%T) INFO: Configuring Host nameserver to recognize cluster fqdn..."
+if [ "$(sudo systemctl is-active systemd-resolved.service)" != "active" ]; then
+    sudo systemctl enable --now systemd-resolved.service
+fi
+
+# Generate script.
+interface=$(ip route | grep ${LIBVIRT_NETWORK_PREFIX} | grep -oP 'dev \K\w+')
+sed \
+    -e "s#\${LIBVIRT_NETWORK_PREFIX}#$LIBVIRT_NETWORK_PREFIX#" \
+    -e "s#\${CLUSTER_NAME}#$CLUSTER_NAME#" \
+    -e "s#\${CLUSTER_DOMAIN}#$CLUSTER_DOMAIN#" \
+    -e "s#\${INTERFACE}#$interface#" \
+    files.phase1/start-env.sh.tpl > ./start-env.sh
+    chmod +x ./start-env.sh
+if ! [ $? -eq 0 ]; then
+    echo "$(date +%T) ERROR: Error generating start.env.sh script."
+    exit 5
+fi
+
+echo "$(date +%T) INFO: Always run './start-env.sh' to access OpenShift Web Console..."
+./start-env.sh
+
+
+echo "$(date +%T) INFO:
   Phase 1 (Infra) sucessfully created.
   Moving to Phase 2 - Preparing Bastion VM for the OpenShift Install."
