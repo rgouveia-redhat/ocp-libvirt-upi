@@ -11,9 +11,12 @@ log-facility local7;
 authoritative;
 ignore client-updates;
 
-
 option ip-forwarding    false;
 option mask-supplier    false;
+
+# empty default subnet
+subnet {{ ansible_default_ipv4.network }} netmask {{ ansible_default_ipv4.netmask }} {
+}
 
 subnet {{ network_prefix }}.0 netmask 255.255.255.0 {
 
@@ -26,53 +29,46 @@ subnet {{ network_prefix }}.0 netmask 255.255.255.0 {
 
     next-server {{ network_prefix }}.3;
     filename "pxelinux.0";
+}
 
-#    host bastion {
-#        option host-name "bastion.{{ cluster_name }}.{{ cluster_domain }}";
-#        hardware ethernet { { mac_bastion } };
-#        fixed-address {{ network_prefix }}.3;
-#    }
+host bootstrap {
+    option host-name "bootstrap.{{ cluster_name }}.{{ cluster_domain }}";
+    hardware ethernet {{ mac_bootstrap }};
+    fixed-address {{ network_prefix }}.9;
+}
 
-    host bootstrap {
-        option host-name "bootstrap.{{ cluster_name }}.{{ cluster_domain }}";
-        hardware ethernet {{ mac_bootstrap }};
-        fixed-address {{ network_prefix }}.9;
-    }
+host master1 {
+    option host-name "master1.{{ cluster_name }}.{{ cluster_domain }}";
+    hardware ethernet {{ mac_master1 }};
+    fixed-address {{ network_prefix }}.10;
+}
 
-    host master1 {
-        option host-name "master1.{{ cluster_name }}.{{ cluster_domain }}";
-        hardware ethernet {{ mac_master1 }};
-        fixed-address {{ network_prefix }}.10;
-    }
+host master2 {
+    option host-name "master2.{{ cluster_name }}.{{ cluster_domain }}";
+    hardware ethernet {{ mac_master2 }};
+    fixed-address {{ network_prefix }}.11;
+}
 
-    host master2 {
-        option host-name "master2.{{ cluster_name }}.{{ cluster_domain }}";
-        hardware ethernet {{ mac_master2 }};
-        fixed-address {{ network_prefix }}.11;
-    }
+host master3 {
+    option host-name "master3.{{ cluster_name }}.{{ cluster_domain }}";
+    hardware ethernet {{ mac_master3 }};
+    fixed-address {{ network_prefix }}.12;
+}
 
-    host master3 {
-        option host-name "master3.{{ cluster_name }}.{{ cluster_domain }}";
-        hardware ethernet {{ mac_master3 }};
-        fixed-address {{ network_prefix }}.12;
-    }
+host worker1 {
+    option host-name "worker1.{{ cluster_name }}.{{ cluster_domain }}";
+    hardware ethernet {{ mac_worker1 }};
+    fixed-address {{ network_prefix }}.20;
+}
 
-    host worker1 {
-        option host-name "worker1.{{ cluster_name }}.{{ cluster_domain }}";
-        hardware ethernet {{ mac_worker1 }};
-        fixed-address {{ network_prefix }}.20;
-    }
+host worker2 {
+    option host-name "worker2.{{ cluster_name }}.{{ cluster_domain }}";
+    hardware ethernet {{ mac_worker2 }};
+    fixed-address {{ network_prefix }}.21;
+}
 
-    host worker2 {
-        option host-name "worker2.{{ cluster_name }}.{{ cluster_domain }}";
-        hardware ethernet {{ mac_worker2 }};
-        fixed-address {{ network_prefix }}.21;
-    }
-
-    host worker3 {
-        option host-name "worker3.{{ cluster_name }}.{{ cluster_domain }}";
-        hardware ethernet {{ mac_worker3 }};
-        fixed-address {{ network_prefix }}.22;
-    }
-
+host worker3 {
+    option host-name "worker3.{{ cluster_name }}.{{ cluster_domain }}";
+    hardware ethernet {{ mac_worker3 }};
+    fixed-address {{ network_prefix }}.22;
 }
