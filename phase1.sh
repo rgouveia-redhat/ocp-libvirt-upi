@@ -408,8 +408,12 @@ done
 echo
 
 echo "INFO: Installing Ansible dependencies..."
-ansible-galaxy collection install community.general
-ansible-galaxy collection install ansible.posix
+if ! [ -d ~/.ansible/collections/ansible_collections/community/general/ ]; then
+    ansible-galaxy collection install community.general
+fi
+if ! [ -d ~/.ansible/collections/ansible_collections/ansible/posix/ ]; then
+    ansible-galaxy collection install ansible.posix
+fi
 
 echo "INFO: Check to make sure Ansible can proceed."
 ansible \

@@ -43,27 +43,18 @@
 
 # We only want the bastion nameserver as active.
 # Disable the nameserver provided by the "default" network.
+### TODO: Ideally access server facts and get the connection name.
 
-# nmcli connection modify enp1s0 ipv4.ignore-auto-dns yes
-### Ideally access server facts and get the connection name.
+- block:
+  - name: Disable the nameserver provided by the "default" network
+    ansible.builtin.shell: nmcli connection modify enp1s0 ipv4.ignore-auto-dns yes
 
-#- name: Disable the nameserver provided by the "default" network
-#  community.general.nmcli:
-#    conn_name: enp1s0
-#    dns4_ignore_auto: yes
-#    state: present
-#  register: nm
-
-- name: Disable the nameserver provided by the "default" network
-  ansible.builtin.shell: nmcli connection modify enp1s0 ipv4.ignore-auto-dns yes
-  register: nm
-
-- name: restart NetworkManager
-  ansible.builtin.systemd:
-    name: named.service
-    state: restart
-    enabled: yes
-  when: nm.changed == true
+  - name: restart NetworkManager
+    ansible.builtin.systemd:
+      name: named.service
+      state: restarted
+      enabled: yes
+  when: ansible_dns.nameservers|length > 1
 
 
 # named: ips and names.
@@ -129,7 +120,10 @@
 # /var/lib/tftpboot/pxelinux.cfg/default
 
 - name: Make Network Boot Programs for BIOS based systems available
-  command: cp "{{ item }}" /var/lib/tftpboot/
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /var/lib/tftpboot/
+    remote_src: yes
   with_items:
     - /usr/share/syslinux/memdisk
     - /usr/share/syslinux/menu.c32
@@ -235,8 +229,17 @@
     state: started
     enabled: yes
 
-- name: Download file with checksum url (sha256)
-  get_url:
+# Checking for live_kernel only.
+- name: Test existence of pxe boot files...
+  ansible.builtin.stat:
+    path: /var/www/html/rhcos-live-kernel-x86_64
+  register: live_kernel
+
+#- debug:
+#    var: live_kernel
+
+- name: Download pxe boot file with checksum url (sha256)
+  ansible.builtin.get_url:
     url: "{{ item }}"
     dest: /var/www/html
     force: no
@@ -248,7 +251,7 @@
     - "{{ openshift_mirror_base }}/rhcos-live-kernel-x86_64"
     - "{{ openshift_mirror_base }}/rhcos-live-initramfs.x86_64.img"
     - "{{ openshift_mirror_base }}/rhcos-live-rootfs.x86_64.img"
-
+  when: not live_kernel.stat.exists
 
 # haproxy ports 80, 443: names.
 # /etc/haproxy/haproxy.cfg
