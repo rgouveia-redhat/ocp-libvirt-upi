@@ -425,3 +425,9 @@ else
 	echo "$(date +%T) ERROR: Ansible test failed. Fix the issue and run this command again."
 	exit 100
 fi
+
+
+echo "
+$(date +%T) INFO:
+  Phase 1 (Infra) sucessfully created.
+  Moving to Phase 2 - Preparing Bastion VM for the OpenShift Install."
