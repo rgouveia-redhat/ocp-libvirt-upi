@@ -57,8 +57,7 @@ WORKER_MEMORY_SIZE=$WORKER_MEMORY_SIZE
 
 
 Do you want to continue? Press Enter or CTRL+C to abort."
-
-#read tmp
+read tmp
 
 
 ### Check for sudo privileges
@@ -426,7 +425,10 @@ else
 	exit 100
 fi
 
+# Back to script folder.
+cd ../..
 
+echo
 echo "$(date +%T) INFO: Configuring Host nameserver to recognize cluster fqdn..."
 if [ "$(sudo systemctl is-active systemd-resolved.service)" != "active" ]; then
     sudo systemctl enable --now systemd-resolved.service
@@ -450,6 +452,8 @@ echo "$(date +%T) INFO: Always run './start-env.sh' to access OpenShift Web Cons
 ./start-env.sh
 
 
-echo "$(date +%T) INFO:
-  Phase 1 (Infra) sucessfully created.
-  Moving to Phase 2 - Preparing Bastion VM for the OpenShift Install."
+echo "
+
+$(date +%T) INFO: Phase 1 (Infra) sucessfully created.
+
+Moving to Phase 2 - Preparing Bastion VM for the OpenShift Install."
