@@ -1,0 +1,25 @@
+---
+
+# Checking for live_kernel only.
+- name: Test existence of pxe boot files...
+  ansible.builtin.stat:
+    path: /var/www/html/rhcos-live-kernel-x86_64
+  register: live_kernel
+
+#- debug:
+#    var: live_kernel
+
+- name: Download pxe boot file with checksum url (sha256)
+  ansible.builtin.get_url:
+    url: "{{ item }}"
+    dest: /var/www/html
+    force: no
+    owner: apache
+    group: apache
+    mode: '0664'
+    checksum: sha256:{{ openshift_mirror_base }}/sha256sum.txt
+  with_items:
+    - "{{ openshift_mirror_base }}/rhcos-live-kernel-x86_64"
+    - "{{ openshift_mirror_base }}/rhcos-live-initramfs.x86_64.img"
+    - "{{ openshift_mirror_base }}/rhcos-live-rootfs.x86_64.img"
+  when: not live_kernel.stat.exists
