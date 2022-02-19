@@ -65,18 +65,18 @@ Do you want to continue? Press Enter or CTRL+C to abort."
 
 sudo id 2>&1 1>/dev/null
 if [ $? -eq 0 ]; then
-	echo "INFO: User has sudo privileges."
+	echo "$(date +%T) INFO: User has sudo privileges."
 else
-	echo "WARNING: User DOES NOT have sudo privileges without password."
+	echo "$(date +%T) WARNING: User DOES NOT have sudo privileges without password."
 fi
 
 
 ### Verify libvirt is enabled
 if [ $(sudo systemctl is-enabled libvirtd.service) != 'enabled' ] ; then
-  echo "Error: Libvirt is not enabled."
+  echo "$(date +%T) Error: Libvirt is not enabled."
   exit -1
 else
-  echo "INFO: Libvirt installed and enabled."
+  echo "$(date +%T) INFO: Libvirt installed and enabled."
 fi
 
 ### Check for needed binaries.
@@ -84,34 +84,34 @@ packages=""
 
 virsh -v 2>&1 1>/dev/null
 if [ $? -eq 0 ]; then
-	echo "INFO: virsh detected."
+	echo "$(date +%T) INFO: virsh detected."
 else
   packages="$packages libvirt-client"
 fi
 
 virt-install --version 2>&1 1>/dev/null
 if [ $? -eq 0 ]; then
-	echo "INFO: virt-install detected."
+	echo "$(date +%T) INFO: virt-install detected."
 else
   packages="$packages virt-install"
 fi
 
 virt-viewer --version 2>&1 1>/dev/null
 if [ $? -eq 0 ]; then
-	echo "INFO: virt-viewer detected."
+	echo "$(date +%T) INFO: virt-viewer detected."
 else
   packages="$packages virt-viewer"
 fi
 
 ansible --version 2>&1 1>/dev/null
 if [ $? -eq 0 ]; then
-	echo "INFO: ansible detected."
+	echo "$(date +%T) INFO: ansible detected."
 else
   packages="$packages ansible"
 fi
 
 if [ "$packages" != "" ] ; then
-  echo "INFO: Installing missing packages: $packages"
+  echo "$(date +%T) INFO: Installing missing packages: $packages"
   sudo dnf install -y $packages
 fi
 
@@ -126,7 +126,7 @@ sudo virsh connect qemu:///system
 
 ### Create network for cluster.
 if [ "$(sudo virsh net-list --all --name | grep $CLUSTER_NAME)" != "" ] ; then
-    echo "INFO: Network already exists."
+    echo "$(date +%T) INFO: Network already exists."
 else
     if [ $DISCONNECTED ] ; then
         xml=$(eval "echo \"$(cat files.phase1/virt-network-isolated.xml)\"")
@@ -144,7 +144,7 @@ fi
 
 ### Create the storage pool for the cluster.
 if [ "$(sudo virsh pool-list --all --name | grep $CLUSTER_NAME)" != "" ] ; then
-    echo "INFO: Storage Pool already exists."
+    echo "$(date +%T) INFO: Storage Pool already exists."
 else
     mkdir -p $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME
     sudo virsh pool-create-as --print-xml --name $CLUSTER_NAME --type dir --target $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME > /tmp/pool-tmp.xml
@@ -157,18 +157,18 @@ fi
 
 ### Check for installation ISO.
 if [ "$BASTION_INSTALL_ISO" != "" ] && [ -f $BASTION_INSTALL_ISO ] ; then
-	echo "INFO: Source: $BASTION_INSTALL_ISO"
+	echo "$(date +%T) INFO: Source: $BASTION_INSTALL_ISO"
 else
-	echo "ERROR: Install ISO not found! Please define BASTION_INSTALL_ISO."
+	echo "$(date +%T) ERROR: Install ISO not found! Please define BASTION_INSTALL_ISO."
 	exit 2
 fi
 
 
 ### Check/Create SSH Keys. OpenShift compatible.
 if [ -f ./ssh/id_rsa ]; then
-	echo "INFO: SSH keys already created."
+	echo "$(date +%T) INFO: SSH keys already created."
 else
-    echo "INFO: Generating SSH Keys..."
+    echo "$(date +%T) INFO: Generating SSH Keys..."
     mkdir ./ssh
     ssh-keygen -t ed25519 -f ./ssh/id_rsa -N '' -C "kubeadmin@${CLUSTER_NAME}.${CLUSTER_DOMAIN}"
     chmod 400 ./ssh/id_rsa*
@@ -181,7 +181,7 @@ fi
 ### TODO: FIX!!! /home is being created with 30G.
 
 if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-bastion)" != "" ] ; then
-    echo "INFO: Bastion VM already exists."
+    echo "$(date +%T) INFO: Bastion VM already exists."
 else
     # Variant. Check with 'osinfo-query os'.
     variant='centos8'
@@ -203,7 +203,7 @@ else
         -e "s#\${SSH_KEY}#$ssh_key#" \
         $ks > files.phase1/anaconda.ks
     if ! [ $? -eq 0 ]; then
-        echo "ERROR: Error generating kickstart file"
+        echo "$(date +%T) ERROR: Error generating kickstart file"
         exit 5
     fi
 
@@ -223,13 +223,16 @@ else
 
     if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
         echo "
-[ACTION REQUIRED] Open a console to the bastion vm and 
+
+$(date +%T) [ACTION REQUIRED] Open a console to the bastion vm and 
                   complete the Red Hat Network authentication!
-                  Close the virt-viewer window when done."
+                  Close the virt-viewer window when done.
+                  
+                  "
         sudo virt-viewer ${CLUSTER_NAME}-bastion
     fi
 
-    echo "INFO: VMs will power off after installation. Waiting for it..."
+    echo "$(date +%T) INFO: VMs will power off after installation. Waiting for it..."
 
     vms_ready=0
     while [[ $vms_ready -eq 0 ]] ; do
@@ -255,11 +258,11 @@ while [ "$bastion_ip" == "" ]; do
     #echo "Waiting for bastion IP..."
     #sleep $DELAY
 done
-echo "INFO: Bastion IP: $bastion_ip"
+echo "$(date +%T) INFO: Bastion IP: $bastion_ip"
 
 
 ### Create hosts file for Ansible.
-echo "INFO: Generating the Ansible hosts file..."
+echo "$(date +%T) INFO: Generating the Ansible hosts file..."
 
 mkdir -p files.phase1/ansible/
 cd files.phase1/ansible/
@@ -271,7 +274,7 @@ EOF
 
 
 ### Prepare Ansible vars file.
-echo "INFO: Generating the Ansible vars file..."
+echo "$(date +%T) INFO: Generating the Ansible vars file..."
 
 reverse=$(echo $LIBVIRT_NETWORK_PREFIX | awk -F. '{print $3 "." $2 "." $1}')
 echo "---
@@ -298,7 +301,7 @@ dns_forwarders: '$DNS_FORWARDERS'
 
 # Create bootstrap vm.
 if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-bootstrap)" != "" ]; then
-    echo "INFO: Bootstrap VM already exists."
+    echo "$(date +%T) INFO: Bootstrap VM already exists."
 else
     # Variant. Check with 'osinfo-query os'.
     variant='rhel8.5'
@@ -326,7 +329,7 @@ fi
 # Create masters vm.
 for i in {1..3}; do
     if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-master$i)" != "" ]; then
-        echo "INFO: Master$i VM already exists."
+        echo "$(date +%T) INFO: Master$i VM already exists."
     else
         # Variant. Check with 'osinfo-query os'.
         variant='rhel8.5'
@@ -357,7 +360,7 @@ done
 # Create workers vms.
 for i in {1..3}; do
     if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-worker$i)" != "" ]; then
-        echo "INFO: Worker$i VM already exists."
+        echo "$(date +%T) INFO: Worker$i VM already exists."
     else
         # Variant. Check with 'osinfo-query os'.
         variant='rhel8.5'
@@ -388,7 +391,7 @@ done
 
 
 ### Use Ansible to configure bastion vm.
-echo "INFO: Waiting for SSH to be ready on bastion vm..."
+echo "$(date +%T) INFO: Waiting for SSH to be ready on bastion vm..."
 
 ready=0
 while [ $ready -eq 0 ]; do
@@ -407,7 +410,7 @@ while [ $ready -eq 0 ]; do
 done
 echo
 
-echo "INFO: Installing Ansible dependencies..."
+echo "$(date +%T) INFO: Installing Ansible dependencies..."
 if ! [ -d ~/.ansible/collections/ansible_collections/community/general/ ]; then
     ansible-galaxy collection install community.general
 fi
@@ -415,20 +418,20 @@ if ! [ -d ~/.ansible/collections/ansible_collections/ansible/posix/ ]; then
     ansible-galaxy collection install ansible.posix
 fi
 
-echo "INFO: Check to make sure Ansible can proceed."
+echo "$(date +%T) INFO: Check to make sure Ansible can proceed."
 ansible \
 	--private-key=../../ssh/id_rsa \
 	--ssh-extra-args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
 	-u root -i hosts all -m ping
 
 if [ $? -eq 0 ]; then
-	echo "INFO: Running Ansible Playbook to configure Systems..."
+	echo "$(date +%T) INFO: Running Ansible Playbook to configure Systems..."
 
 	ansible-playbook \
 		--private-key=../../ssh/id_rsa \
 		--ssh-extra-args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
 		-u root -i hosts bastion.yaml
 else
-	echo "ERROR: Ansible test failed. Fix the issue and run this command again."
+	echo "$(date +%T) ERROR: Ansible test failed. Fix the issue and run this command again."
 	exit 100
 fi
