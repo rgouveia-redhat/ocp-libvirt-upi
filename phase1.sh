@@ -263,12 +263,11 @@ echo "$(date +%T) INFO: Bastion IP: $bastion_ip"
 ### Create hosts file for Ansible.
 echo "$(date +%T) INFO: Generating the Ansible hosts file..."
 
-mkdir -p files.phase1/ansible/
-cd files.phase1/ansible/
+mkdir -p ansible/vars
 
-cat <<EOF > hosts
+cat <<EOF > ansible/hosts
 [bastion]
-$bastion_ip hostname=${CLUSTER_NAME}-bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
+$bastion_ip hostname=bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
 EOF
 
 
@@ -285,7 +284,7 @@ cluster_version: '$CLUSTER_VERSION'
 cluster_name: '$CLUSTER_NAME'
 cluster_domain: '$CLUSTER_DOMAIN'
 dns_forwarders: '$DNS_FORWARDERS'
-" > ./vars/common.yaml
+" > ansible/vars/common.yaml
 
 
 # Create bootstrap vm.
@@ -310,9 +309,9 @@ else
     sudo virsh destroy ${CLUSTER_NAME}-bootstrap
 fi
 
-if [ "$(grep mac_bootstrap ./vars/common.yaml)" == "" ]; then
+if [ "$(grep mac_bootstrap ansible/vars/common.yaml)" == "" ]; then
     mac=$(sudo virsh domiflist ${CLUSTER_NAME}-bootstrap | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
-    echo "mac_bootstrap: '$mac'" >> ./vars/common.yaml
+    echo "mac_bootstrap: '$mac'" >> ansible/vars/common.yaml
 fi
 
 # Create masters vm.
@@ -340,9 +339,9 @@ for i in {1..3}; do
 done
 
 for i in {1..3}; do
-    if [ "$(grep mac_master$i ./vars/common.yaml)" == "" ]; then
+    if [ "$(grep mac_master$i ansible/vars/common.yaml)" == "" ]; then
         mac=$(sudo virsh domiflist ${CLUSTER_NAME}-master$i | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
-        echo "mac_master$i: '$mac'" >> ./vars/common.yaml
+        echo "mac_master$i: '$mac'" >> ansible/vars/common.yaml
     fi
 done
 
@@ -371,12 +370,15 @@ for i in {1..3}; do
 done
 
 for i in {1..3}; do
-    if [ "$(grep mac_worker$i ./vars/common.yaml)" == "" ]; then
+    if [ "$(grep mac_worker$i ansible/vars/common.yaml)" == "" ]; then
         mac=$(sudo virsh domiflist ${CLUSTER_NAME}-worker$i | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
-        echo "mac_worker$i: '$mac'" >> ./vars/common.yaml
+        echo "mac_worker$i: '$mac'" >> ansible/vars/common.yaml
     fi
 done
 
+
+# Go to Ansible folder.
+cd ansible
 
 
 ### Use Ansible to configure bastion vm.
@@ -389,7 +391,7 @@ while [ $ready -eq 0 ]; do
 		-o ConnectTimeout=10 \
 		-o UserKnownHostsFile=/dev/null \
 		-o StrictHostKeyChecking=no \
-		-i ../../ssh/id_rsa root@${bastion_ip} exit
+		-i ../ssh/id_rsa root@${bastion_ip} exit
 	if [ $? -eq 0 ]; then
 		ready=1
 	else
@@ -407,9 +409,10 @@ if ! [ -d ~/.ansible/collections/ansible_collections/ansible/posix/ ]; then
     ansible-galaxy collection install ansible.posix
 fi
 
+
 echo "$(date +%T) INFO: Check to make sure Ansible can proceed."
 ansible \
-	--private-key=../../ssh/id_rsa \
+	--private-key=../ssh/id_rsa \
 	--ssh-extra-args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
 	-u root -i hosts all -m ping
 
@@ -417,7 +420,7 @@ if [ $? -eq 0 ]; then
 	echo "$(date +%T) INFO: Running Ansible Playbook to configure Systems..."
 
 	ansible-playbook \
-		--private-key=../../ssh/id_rsa \
+		--private-key=../ssh/id_rsa \
 		--ssh-extra-args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
 		-u root -i hosts bastion.yaml
 else
@@ -426,7 +429,7 @@ else
 fi
 
 # Back to script folder.
-cd ../..
+cd ..
 
 echo
 echo "$(date +%T) INFO: Configuring Host nameserver to recognize cluster fqdn..."
@@ -457,3 +460,5 @@ echo "
 $(date +%T) INFO: Phase 1 (Infra) sucessfully created.
 
 Moving to Phase 2 - Preparing Bastion VM for the OpenShift Install."
+
+./phase2.sh
