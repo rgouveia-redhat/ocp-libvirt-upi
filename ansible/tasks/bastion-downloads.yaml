@@ -1,5 +1,27 @@
 ---
 
+- name: Install needed packages
+  ansible.builtin.package:
+    name:
+      - openssl
+      - httpd-tools
+      - podman
+      - skopeo
+    state: present
+
+# Copy SSH key to bastion
+- name: Copy SSH key to bastion
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /root/.ssh/
+    owner: root
+    group: root
+    mode: '0400'
+  with_items:
+    - ../ssh/id_rsa
+    - ../ssh/id_rsa.pub
+
+
 # Checking for live_kernel only.
 - name: Test existence of pxe boot files...
   ansible.builtin.stat:
@@ -23,3 +45,87 @@
     - "{{ openshift_mirror_base }}/rhcos-live-initramfs.x86_64.img"
     - "{{ openshift_mirror_base }}/rhcos-live-rootfs.x86_64.img"
   when: not live_kernel.stat.exists
+
+
+# Install tooling.
+# https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/
+
+- name: Create a directory if it does not exist
+  ansible.builtin.file:
+    path: /root/bin
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+# Checking for openshift-install only.
+- name: Test existence of client tools tar.gz files...
+  ansible.builtin.stat:
+    path: /root/bin/openshift-install-linux-{{ cluster_version }}.tar.gz
+  register: cli_install
+
+- name: Download client tools with checksum url (sha256)
+  ansible.builtin.get_url:
+    url: "{{ item }}"
+    dest: /root/bin
+    force: no
+    checksum: sha256:https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/sha256sum.txt
+  with_items:
+    - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/openshift-client-linux-{{ cluster_version }}.tar.gz"
+    - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/openshift-install-linux-{{ cluster_version }}.tar.gz"
+    - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/opm-linux-{{ cluster_version }}.tar.gz"
+    - - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/release.txt"
+  when: not cli_install.stat.exists
+
+# Checking for openshift-install only.
+- name: Test existence of client tools binaries...
+  ansible.builtin.stat:
+    path: /root/bin/openshift-install
+  register: cli_install_bin
+
+- name: Unarchive client tools
+  ansible.builtin.unarchive:
+    src: "{{ item }}"
+    dest: /root/bin
+    remote_src: yes
+  with_items:
+    - /root/bin/openshift-install-linux-{{ cluster_version }}.tar.gz
+    - /root/bin/openshift-client-linux-{{ cluster_version }}.tar.gz
+    - /root/bin/opm-linux-{{ cluster_version }}.tar.gz
+  when: not cli_install_bin.stat.exists
+
+# Create CA
+# https://gist.github.com/fntlnz/cf14feb5a46b2eda428e000157447309
+
+- name: Create a directory for the CA
+  ansible.builtin.file:
+    path: /root/CA
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+
+
+
+# Configure registry
+# https://access.redhat.com/articles/5489341
+# https://docs.openshift.com/container-platform/4.9/installing/installing-mirroring-installation-images.html
+
+- name: Create directories
+  ansible.builtin.file:
+    path: "/opt/registry/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  with_items:
+    - auth
+    - certs
+    - data
+    - conf
+
+
+
+
+# cli tools completion in bashrc.

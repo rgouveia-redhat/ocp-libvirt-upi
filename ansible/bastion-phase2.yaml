@@ -1,0 +1,13 @@
+---
+
+- name: Bastion Prepare
+  hosts: bastion
+
+  vars_files:
+    - vars/common.yaml
+
+  handlers:
+    - import_tasks: handlers/main.yaml
+
+  tasks:
+    - import_tasks: tasks/bastion-downloads.yaml
