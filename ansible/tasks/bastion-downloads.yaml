@@ -100,6 +100,23 @@
     - /root/bin/opm-linux-{{ cluster_version }}.tar.gz
   when: not cli_install_bin.stat.exists
 
+- name: Add oc completion commands in .bash_profile
+  ansible.builtin.lineinfile:
+    path: /root/.bash_profile
+    regexp: '^source <(oc completion bash)'
+    line: 'source <(oc completion bash)'
+
+- name: Add openshift-install completion commands in .bash_profile
+  ansible.builtin.lineinfile:
+    path: /root/.bash_profile
+    regexp: '^source <(openshift-install completion bash)'
+    line: 'source <(openshift-install completion bash)'
+
+
+#  ansible.builtin.shell:
+#    cmd: echo -e "source <(oc completion bash)\nsource <(openshift-install completion bash)" >> /root/.bash_profile
+
+
 # Create CA
 # https://gist.github.com/fntlnz/cf14feb5a46b2eda428e000157447309
 # https://janikvonrotz.ch/2019/01/21/create-a-certificate-authority-ca-and-sign-server-certificates-without-prompting-using-openssl/
@@ -289,4 +306,4 @@
   args:
     executable: /bin/bash
 
-# cli tools completion in bashrc.
+
