@@ -23,7 +23,7 @@
 
 
 # Checking for live_kernel only.
-- name: Test existence of pxe boot files...
+- name: Test existence of pxe boot files
   ansible.builtin.stat:
     path: /var/www/html/rhcos-live-kernel-x86_64
   register: live_kernel
@@ -59,7 +59,7 @@
     mode: '0755'
 
 # Checking for openshift-install only.
-- name: Test existence of client tools tar.gz files...
+- name: Test existence of client tools tar.gz files
   ansible.builtin.stat:
     path: /root/bin/openshift-install-linux-{{ cluster_version }}.tar.gz
   register: cli_install
@@ -78,7 +78,7 @@
   when: not cli_install.stat.exists
 
 # Checking for openshift-install only.
-- name: Test existence of client tools binaries...
+- name: Test existence of client tools binaries
   ansible.builtin.stat:
     path: /root/bin/openshift-install
   register: cli_install_bin
@@ -96,23 +96,53 @@
 
 # Create CA
 # https://gist.github.com/fntlnz/cf14feb5a46b2eda428e000157447309
-
-- name: Create a directory for the CA
-  ansible.builtin.file:
-    path: /root/CA
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
+# https://janikvonrotz.ch/2019/01/21/create-a-certificate-authority-ca-and-sign-server-certificates-without-prompting-using-openssl/
 
 
+- name: Checking the existence of the CA cert
+  ansible.builtin.stat:
+    path: /root/CA/CA_cert.pem
+  register: CA
+
+- block:
+
+  - name: Create a directory for the CA
+    ansible.builtin.file:
+      path: /root/CA
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
+
+  # A more key uses 4096 bits.
+  - name: Create the CA key
+    ansible.builtin.shell:
+      cmd: openssl genrsa -out ./CA_key.pem 2048
+      chdir: /root/CA
+
+  # Adjust cert parameters to your liking.
+  - name: Create the CA cert
+    ansible.builtin.shell:
+      cmd: openssl req -x509 -new -nodes -key ./CA_key.pem -sha256 -days 3650 -out ./CA_cert.pem -subj "/C=UK/ST=London/L=London/O=Red Hat CEE/CN=ShiftCA"
+      chdir: /root/CA
+
+  - name: Installing the CA in Bastion system 
+    ansible.builtin.copy:
+      src: /root/CA/CA_cert.pem
+      dest: /etc/pki/ca-trust/source/anchors/
+      remote_src: yes
+
+  - name: Running update-ca-trust
+    ansible.builtin.shell: update-ca-trust extract
+
+  when: not CA.stat.exists
 
 
 # Configure registry
 # https://access.redhat.com/articles/5489341
 # https://docs.openshift.com/container-platform/4.9/installing/installing-mirroring-installation-images.html
 
-- name: Create directories
+- name: Create registry directories
   ansible.builtin.file:
     path: "/opt/registry/{{ item }}"
     state: directory
@@ -125,7 +155,92 @@
     - data
     - conf
 
+# Create bastion cert
+- name: Checking the existence of the bastion cert
+  ansible.builtin.stat:
+    path: /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.pem
+  register: cert
 
+- block:
+
+  - name: Generating bastion cert key
+    ansible.builtin.shell:
+      cmd: openssl genrsa -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.key 2048
+
+  - name: Generating bastion cert request
+    ansible.builtin.shell:
+      cmd: openssl req -new -key /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.key -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.csr -subj "/CN=bastion.{{ cluster_name }}.{{ cluster_domain }}"
+
+  - name: Creating OpenSSL X509v3 extensions file for bastion
+    ansible.builtin.template:
+      src: files/openssl-X509v3-extensions.j2
+      dest: /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.cnf
+      owner: root
+      group: root
+      mode: '0644'
+      backup: no
+
+  - name: Signing bastion certificate
+    ansible.builtin.shell:
+      cmd: openssl x509 -req -in /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.csr -CA /root/CA/CA_cert.pem -CAkey /root/CA/CA_key.pem -CAcreateserial -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.pem -days 825 -sha256 -extfile /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.cnf
+
+  when: not cert.stat.exists
+
+
+- name: Checking the existence of the registry auth
+  ansible.builtin.stat:
+    path: /opt/registry/auth/htpasswd
+  register: auth
+
+# Auth. Username: admin, Password: redhat
+- name: Creating registry authentication file
+  ansible.builtin.shell:
+    cmd: htpasswd -bBc /opt/registry/auth/htpasswd admin redhat ; echo redhat > /opt/registry/auth/admin-password.txt
+  when: not auth.stat.exists
+
+- name: Creating registry configuration file
+  ansible.builtin.template:
+    src: files/registry/registry-config.yml.j2
+    dest: /opt/registry/conf/config.yml
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+- name: Permit traffic in port 5000/tcp
+  ansible.posix.firewalld:
+    port: "5000/tcp"
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: Creating registry Systemd configuration file
+  ansible.builtin.template:
+    src: files/registry/podman-registry.service.j2
+    dest: /etc/systemd/system/podman-registry.service
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+- name: restart and enable podman-registry.service
+  ansible.builtin.systemd:
+    name: podman-registry.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Test registry
+  ansible.builtin.uri:
+    url: https://bastion.{{ cluster_name }}.{{ cluster_domain }}:5000/v2/_catalog
+    url_username: admin
+    url_password: redhat
+    return_content: yes
+  register: output
+
+- name: status=200 and json payload of "{"repositories":[]}" is good!
+  debug:
+    var: output
 
 
 # cli tools completion in bashrc.

@@ -1,0 +1,8 @@
+authorityKeyIdentifier=keyid,issuer
+keyUsage=digitalSignature
+extendedKeyUsage=serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = bastion.{{ cluster_name }}.{{ cluster_domain }}
+DNS.2 = bastion
