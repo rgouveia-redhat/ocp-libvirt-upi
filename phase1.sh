@@ -16,6 +16,11 @@ DELAY=10
 ### Validate settings.
 source Settings
 
+if ! [ -f "$PULL_SECRET" ]; then
+  echo "$(date +%T) Error: Pull-secret file does not exist yet. Get it from https://console.redhat.com/openshift/downloads"
+  exit -1
+fi
+
 echo "
 
 IMPORTANT
@@ -39,6 +44,9 @@ BASTION_INSTALL_TYPE=$BASTION_INSTALL_TYPE
 BASTION_INSTALL_ISO=$BASTION_INSTALL_ISO
 
 DNS_FORWARDERS=$DNS_FORWARDERS
+
+PULL_SECRET='$PULL_SECRET'
+PULL_SECRET_EMAIL='$PULL_SECRET_EMAIL'
 
 BASTION_DISK_SIZE=$BASTION_DISK_SIZE
 BASTION_CPUS=$BASTION_CPUS
@@ -286,6 +294,8 @@ cluster_version: '$CLUSTER_VERSION'
 cluster_name: '$CLUSTER_NAME'
 cluster_domain: '$CLUSTER_DOMAIN'
 dns_forwarders: '$DNS_FORWARDERS'
+pull_secret: '$PULL_SECRET'
+pull_secret_email: '$PULL_SECRET_EMAIL'
 " > ansible/vars/common.yaml
 
 
