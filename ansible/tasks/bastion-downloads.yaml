@@ -9,7 +9,6 @@
       - skopeo
     state: present
 
-# Copy SSH key to bastion
 - name: Copy SSH key to bastion
   ansible.builtin.copy:
     src: "{{ item }}"
@@ -21,6 +20,13 @@
     - ../ssh/id_rsa
     - ../ssh/id_rsa.pub
 
+- name: Copy pull-secret to bastion
+  ansible.builtin.copy:
+    src: "{{ pull_secret }}"
+    dest: /root/
+    owner: root
+    group: root
+    mode: '0640'
 
 # Checking for live_kernel only.
 - name: Test existence of pxe boot files
@@ -236,11 +242,51 @@
     url_username: admin
     url_password: redhat
     return_content: yes
-  register: output
+  register: registry
 
 - name: status=200 and json payload of "{"repositories":[]}" is good!
   debug:
-    var: output
+    var: registry
 
+# Create a pull-secret for the registry:
+# https://docs.openshift.com/container-platform/4.9/installing/installing-mirroring-installation-images.html#installation-adding-registry-pull-secret_installing-mirroring-installation-images
+
+- name: Create a directory for the registry files
+  ansible.builtin.file:
+    path: /root/registry
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create script to create the registry pull secret
+  ansible.builtin.template:
+    src: files/registry/create-registry-pull-secret.sh.j2
+    dest: /root/registry/create-registry-pull-secret.sh
+    owner: root
+    group: root
+    mode: '0755'
+    backup: no
+
+- name: Run script to create the registry pull secret
+  ansible.builtin.command:
+    cmd: /root/registry/create-registry-pull-secret.sh
+  args:
+    creates: /root/registry/pull-secret.json
+
+- name: Create the mirror registry script
+  ansible.builtin.template:
+    src: files/registry/mirror-registry.sh.j2
+    dest: /root/registry/mirror-registry.sh
+    owner: root
+    group: root
+    mode: '0755'
+    backup: no
+
+- name: Execute the mirror registry script. GO TAKE A COFFEE!!!
+  ansible.builtin.shell:
+    cmd: export PATH=$PATH:/root/bin ; /root/registry/mirror-registry.sh
+  args:
+    executable: /bin/bash
 
 # cli tools completion in bashrc.
