@@ -1,4 +1,5 @@
 ssh/*
+pull-secret.*
 start-env.sh
 files.phase1/anaconda.ks
 ansible/hosts
