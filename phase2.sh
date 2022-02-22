@@ -37,3 +37,13 @@ fi
 
 # Back to script folder.
 cd ..
+
+echo "
+
+$(date +%T) INFO: Phase 2 (Pre-install steps) sucessfully created.
+
+SSH in to the bastion host and run openshift-install:
+
+./start-env.sh
+ssh -i ssh/id_rsa root@bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
+openshift-install --dir c4 --log-level debug create cluster"

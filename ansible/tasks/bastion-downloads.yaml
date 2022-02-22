@@ -302,8 +302,101 @@
 
 - name: Execute the mirror registry script. GO TAKE A COFFEE!!!
   ansible.builtin.shell:
-    cmd: export PATH=$PATH:/root/bin ; /root/registry/mirror-registry.sh
+    cmd: PATH=$PATH:/root/bin /root/registry/mirror-registry.sh
   args:
     executable: /bin/bash
 
 
+# openshift-install
+- name: Get the pull secret in a a variable
+  ansible.builtin.command:
+    cmd: cat /root/pull-secret.txt
+  register: pull_secret
+
+- debug:
+    var: pull_secret
+  tags:
+    - debug
+
+- name: Get the SSH public key in a a variable
+  ansible.builtin.command:
+    cmd: cat /root/.ssh/id_rsa.pub
+  register: ssh_public_key
+
+- debug:
+    var: ssh_public_key
+  tags:
+    - debug
+
+- name: Get the CA cert in a a variable
+  ansible.builtin.command:
+    cmd: awk '{$1="  "$1}1' /root/CA/CA_cert.pem
+  register: ca_cert
+
+- debug:
+    var: ca_cert
+  tags:
+    - debug
+
+- name: Assemble the install-config.yaml
+  ansible.builtin.template:
+    src: files/ocp-install/install-config.yaml.j2
+    dest: /root/install-config.yaml
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+# Ignition files
+
+# Checking for existing run. Remove folder to repeat.
+- name: Test existence of existing files
+  ansible.builtin.stat:
+    path: /root/{{ cluster_name }}/auth
+  register: ignition_files
+
+- debug:
+    var: ignition_files
+
+- block:
+
+  - name: Create folder for cluster
+    ansible.builtin.file:
+      path: /root/{{ cluster_name }}
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
+
+  - name: Copying install-config.yaml to cluster folder
+    ansible.builtin.copy:
+      src: /root/install-config.yaml
+      dest: /root/{{ cluster_name }}/install-config.yaml
+      remote_src: yes
+
+  - name: Create manifest files
+    ansible.builtin.shell:
+      cmd: PATH=$PATH:/root/bin openshift-install --dir {{ cluster_name}} create manifests
+    args:
+      chdir: /root/
+
+  - name: Create ignition files
+    ansible.builtin.shell:
+      cmd: PATH=$PATH:/root/bin openshift-install --dir {{ cluster_name }} create ignition-configs
+    args:
+      chdir: /root/
+
+  - name: Copy ignition files to http server
+    ansible.builtin.copy:
+      src: "{{ item }}"
+      dest: /var/www/html
+      owner: apache
+      group: apache
+      mode: '0664'
+      remote_src: yes
+    with_items:
+      - /root/{{ cluster_name }}/bootstrap.ign
+      - /root/{{ cluster_name }}/master.ign
+      - /root/{{ cluster_name }}/worker.ign
+
+  when: not ignition_files.stat.exists
