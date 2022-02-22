@@ -8,7 +8,7 @@ menu title OpenShift Container Platform {{ cluster_version }}
 LABEL 1
   menu label ^1 - Install Master
   KERNEL http://bastion.{{ cluster_name }}.{{ cluster_domain }}:81/rhcos-live-kernel-x86_64
-  APPEND initrd=http://bastion.{{ cluster_name }}.{{ cluster_domain }}:81/rhcos-live-initramfs.x86_64.img coreos.live.rootfs_url=http://bastion.{{ cluster_name }}.{{ cluster_domain }}:81/rhcos-live-rootfs.x86_64.img coreos.inst.install_dev=/dev/vda coreos.inst.ignition_url=http://bastion.{{ cluster_name }}.{{ cluster_domain }}:81/{{ cluster_name }}/master.ign
+  APPEND initrd=http://bastion.{{ cluster_name }}.{{ cluster_domain }}:81/rhcos-live-initramfs.x86_64.img coreos.live.rootfs_url=http://bastion.{{ cluster_name }}.{{ cluster_domain }}:81/rhcos-live-rootfs.x86_64.img coreos.inst.install_dev=/dev/vda coreos.inst.ignition_url=http://bastion.{{ cluster_name }}.{{ cluster_domain }}:81/master.ign
 
 LABEL 2
   menu label ^2 - Boot from local media
