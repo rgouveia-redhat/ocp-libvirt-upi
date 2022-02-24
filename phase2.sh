@@ -38,6 +38,19 @@ fi
 # Back to script folder.
 cd ..
 
+
+# Generate stop script.
+sed \
+    -e "s#\${CLUSTER_NAME}#$CLUSTER_NAME#g" \
+    -e "s#\${CLUSTER_DOMAIN}#$CLUSTER_DOMAIN#g" \
+    files.phase2/cluster-stop.sh.tpl > ./cluster-stop.sh
+    chmod +x ./cluster-stop.sh
+if ! [ $? -eq 0 ]; then
+    echo "$(date +%T) ERROR: Error generating cluster-stop.sh script."
+    exit 5
+fi
+
+
 echo "
 
 $(date +%T) INFO: Phase 2 (Pre-install steps) sucessfully created.
@@ -46,4 +59,4 @@ SSH in to the bastion host and run openshift-install:
 
 ./start-env.sh
 ssh -i ssh/id_rsa root@bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
-openshift-install --dir c4 --log-level debug create cluster"
+openshift-install --dir ${CLUSTER_NAME} --log-level debug create cluster"
