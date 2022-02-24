@@ -437,6 +437,11 @@ if [ $? -eq 0 ]; then
 		--private-key=../ssh/id_rsa \
 		--ssh-extra-args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
 		-u root -i hosts bastion.yaml
+
+    if ! [ $? -eq 0 ]; then
+        echo "$(date +%T) ERROR: Ansible exited with errors. Fix the errors and rerun ./phase1.sh !"
+        exit 10
+    fi
 else
 	echo "$(date +%T) ERROR: Ansible test failed. Fix the issue and run this command again."
 	exit 100
