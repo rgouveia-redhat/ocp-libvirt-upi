@@ -8,17 +8,7 @@ LOCAL_SECRET_JSON='/root/registry/pull-secret.json'
 RELEASE_NAME='ocp-release'
 ARCHITECTURE='x86_64'
 
-#podman login $LOCAL_REGISTRY --authfile ${LOCAL_SECRET_JSON}
-
-if ! [ -f /root/icsp.txt ]; then
-	oc adm release mirror -a ${LOCAL_SECRET_JSON} \
-		--from=quay.io/${PRODUCT_REPO}/${RELEASE_NAME}:${OCP_RELEASE}-${ARCHITECTURE} \
-		--to=${LOCAL_REGISTRY}/${LOCAL_REPOSITORY} \
-		--to-release-image=${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}:${OCP_RELEASE}-${ARCHITECTURE} --dry-run > /root/icsp.txt
-fi
-
 oc adm release mirror -a ${LOCAL_SECRET_JSON} \
         --from=quay.io/${PRODUCT_REPO}/${RELEASE_NAME}:${OCP_RELEASE}-${ARCHITECTURE} \
         --to=${LOCAL_REGISTRY}/${LOCAL_REPOSITORY} \
         --to-release-image=${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}:${OCP_RELEASE}-${ARCHITECTURE}
-
