@@ -154,7 +154,8 @@ fi
 if [ "$(sudo virsh pool-list --all --name | grep $CLUSTER_NAME)" != "" ] ; then
     echo "$(date +%T) INFO: Storage Pool already exists."
 else
-    mkdir -p $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME
+    sudo mkdir -p $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME
+    sudo chown -R qemu:qemu $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME
     sudo virsh pool-create-as --print-xml --name $CLUSTER_NAME --type dir --target $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME > /tmp/pool-tmp.xml
     sudo virsh pool-define --file /tmp/pool-tmp.xml
     sudo virsh pool-autostart $CLUSTER_NAME
@@ -206,8 +207,9 @@ else
     # Generate kickstart file.
     ssh_key=$(cat ./ssh/id_rsa.pub)
     sed \
-        -e "s#\${CLUSTER_NAME}#$CLUSTER_NAME#" \
-        -e "s#\${CLUSTER_DOMAIN}#$CLUSTER_DOMAIN#" \
+        -e "s#\${CLUSTER_NAME}#$CLUSTER_NAME#g" \
+        -e "s#\${CLUSTER_DOMAIN}#$CLUSTER_DOMAIN#g" \
+        -e "s#\${LIBVIRT_NETWORK_PREFIX}#$LIBVIRT_NETWORK_PREFIX#g" \
         -e "s#\${SSH_KEY}#$ssh_key#" \
         $ks > files.phase1/anaconda.ks
     if ! [ $? -eq 0 ]; then
@@ -452,10 +454,10 @@ fi
 # Generate script.
 interface=$(ip route | grep ${LIBVIRT_NETWORK_PREFIX} | grep -oP 'dev \K\w+')
 sed \
-    -e "s#\${LIBVIRT_NETWORK_PREFIX}#$LIBVIRT_NETWORK_PREFIX#" \
-    -e "s#\${CLUSTER_NAME}#$CLUSTER_NAME#" \
-    -e "s#\${CLUSTER_DOMAIN}#$CLUSTER_DOMAIN#" \
-    -e "s#\${INTERFACE}#$interface#" \
+    -e "s#\${LIBVIRT_NETWORK_PREFIX}#$LIBVIRT_NETWORK_PREFIX#g" \
+    -e "s#\${CLUSTER_NAME}#$CLUSTER_NAME#g" \
+    -e "s#\${CLUSTER_DOMAIN}#$CLUSTER_DOMAIN#g" \
+    -e "s#\${INTERFACE}#$interface#g" \
     files.phase1/start-env.sh.tpl > ./start-env.sh
     chmod +x ./start-env.sh
 if ! [ $? -eq 0 ]; then
