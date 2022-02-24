@@ -1,0 +1,78 @@
+#
+# Libvirt
+#
+
+# Libvirt connection. Can be qemu:///system (server) or qemu:///session (user)
+LIBVIRT_URI='qemu:///system'
+
+# A unused Libvirt network for the cluster
+LIBVIRT_NETWORK_PREFIX='192.168.99'
+
+# The path for the storage. SSD disks recommended!!!
+LIBVIRT_STORAGE_POOL_BASE='/ssd-data'
+
+# What OS will the bastion be? Choose one!
+BASTION_INSTALL_TYPE='redhat'
+#BASTION_INSTALL_TYPE='centos'
+#BASTION_INSTALL_TYPE='fedora'
+
+# Where is the ISO file to create the bastion system?
+# Choose one according to BASTION_INSTALL_TYPE!
+BASTION_INSTALL_ISO='/var/lib/libvirt/images/rhel-8.5-x86_64-boot.iso'
+#BASTION_INSTALL_ISO='centos: TODO'
+#BASTION_INSTALL_ISO='/var/lib/libvirt/images/Fedora-Server-dvd-x86_64-34-1.2.iso'
+
+# The bastion system will be the cluster authorative nameserver
+# To which nameserver should the bastion forward external queries?
+# If more than one, separate with ';'
+DNS_FORWARDERS='192.168.1.254'
+
+
+#
+# Red Hat OpenShift Container Platform
+#
+
+# Will this be a disconnected installation.
+# If true, a mirror registry will be created.
+# If false, NOT YET IMPLEMENTED!!!
+DISCONNECTED=true
+
+ARCH='x86_64'
+CLUSTER_VERSION='4.9.10'
+CLUSTER_DOMAIN='example.com'
+CLUSTER_NAME='ocp4'
+
+# Download URL for the Red Hat Core OS images
+# NOTE: MUST match CLUSTER_VERSION above!!!
+OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.9/latest'
+
+# PATH to the pull secret
+# Get it from https://console.redhat.com/openshift/downloads
+PULL_SECRET="$(pwd)/pull-secret.txt"
+
+# Just an email for the config files.
+PULL_SECRET_EMAIL='me@example.com'
+
+#
+# Nodes specifications
+#
+
+# Bastion
+BASTION_DISK_SIZE=100
+BASTION_CPUS=1
+BASTION_MEMORY_SIZE=2048
+
+# Bootstrap
+BOOTSTRAP_DISK_SIZE=50
+BOOTSTRAP_CPUS=4
+BOOTSTRAP_MEMORY_SIZE=8192
+
+# Masters
+MASTER_DISK_SIZE=50
+MASTER_CPUS=4
+MASTER_MEMORY_SIZE=8192
+
+# Workers
+WORKER_DISK_SIZE=50
+WORKER_CPUS=2
+WORKER_MEMORY_SIZE=6144

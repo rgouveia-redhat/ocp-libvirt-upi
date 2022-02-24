@@ -14,10 +14,15 @@ DELAY=10
 
 
 ### Validate settings.
+if ! [ -f Settings ]; then
+    echo "Error: Settings file does not exist yet.
+Create one from Settings-example and change to your needs."
+    exit -2
+fi
 source Settings
 
 if ! [ -f "$PULL_SECRET" ]; then
-  echo "$(date +%T) Error: Pull-secret file does not exist yet. Get it from https://console.redhat.com/openshift/downloads"
+  echo "Error: Pull-secret file does not exist yet. Get it from https://console.redhat.com/openshift/downloads"
   exit -1
 fi
 
@@ -33,17 +38,16 @@ LIBVIRT_URI=$LIBVIRT_URI
 LIBVIRT_NETWORK_PREFIX=$LIBVIRT_NETWORK_PREFIX
 LIBVIRT_STORAGE_POOL_BASE=$LIBVIRT_STORAGE_POOL_BASE
 
+BASTION_INSTALL_TYPE=$BASTION_INSTALL_TYPE
+BASTION_INSTALL_ISO=$BASTION_INSTALL_ISO
+DNS_FORWARDERS=$DNS_FORWARDERS
+
+DISCONNECTED=$DISCONNECTED
 CLUSTER_DOMAIN=$CLUSTER_DOMAIN
 CLUSTER_NAME=$CLUSTER_NAME
 CLUSTER_VERSION=$CLUSTER_VERSION
-DISCONNECTED=$DISCONNECTED
 ARCH=$ARCH
 OPENSHIFT_MIRROR_BASE=$OPENSHIFT_MIRROR_BASE
-
-BASTION_INSTALL_TYPE=$BASTION_INSTALL_TYPE
-BASTION_INSTALL_ISO=$BASTION_INSTALL_ISO
-
-DNS_FORWARDERS=$DNS_FORWARDERS
 
 PULL_SECRET='$PULL_SECRET'
 PULL_SECRET_EMAIL='$PULL_SECRET_EMAIL'
