@@ -459,7 +459,7 @@ sed \
     files.phase1/start-env.sh.tpl > ./start-env.sh
     chmod +x ./start-env.sh
 if ! [ $? -eq 0 ]; then
-    echo "$(date +%T) ERROR: Error generating start.env.sh script."
+    echo "$(date +%T) ERROR: Error generating start-env.sh script."
     exit 5
 fi
 
