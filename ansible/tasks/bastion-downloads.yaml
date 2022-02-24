@@ -112,6 +112,12 @@
     regexp: '^source <(openshift-install completion bash)'
     line: 'source <(openshift-install completion bash)'
 
+- name: Add KUBECONFIG to .bash_profile
+  ansible.builtin.lineinfile:
+    path: /root/.bash_profile
+    regexp: '^export KUBECONFIG=/root/{{ cluster_name }}/auth/kubeconfig'
+    line: 'export KUBECONFIG=/root/{{ cluster_name }}/auth/kubeconfig'
+
 
 #  ansible.builtin.shell:
 #    cmd: echo -e "source <(oc completion bash)\nsource <(openshift-install completion bash)" >> /root/.bash_profile
