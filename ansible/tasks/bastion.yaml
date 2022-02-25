@@ -51,9 +51,8 @@
 
   - name: restart NetworkManager
     ansible.builtin.systemd:
-      name: named.service
+      name: NetworkManager.service
       state: restarted
-      enabled: yes
   when: ansible_dns.nameservers|length > 1
 
 
