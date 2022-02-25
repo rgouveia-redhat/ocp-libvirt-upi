@@ -137,7 +137,7 @@ sudo virsh connect qemu:///system
 
 
 ### Create network for cluster.
-if [ "$(sudo virsh net-list --all --name | grep $CLUSTER_NAME)" != "" ] ; then
+if [ "$(sudo virsh net-list --all --name | egrep '^$CLUSTER_NAME$')" != "" ] ; then
     echo "$(date +%T) INFO: Network already exists."
 else
     if [ $DISCONNECTED ] ; then
