@@ -137,7 +137,7 @@ sudo virsh connect qemu:///system
 
 
 ### Create network for cluster.
-if [ "$(sudo virsh net-list --all --name | egrep '^$CLUSTER_NAME$')" != "" ] ; then
+if [ "$(sudo virsh net-list --all --name | egrep '^$CLUSTER_NAME\s*$')" != "" ] ; then
     echo "$(date +%T) INFO: Network already exists."
 else
     if [ $DISCONNECTED ] ; then
@@ -155,7 +155,7 @@ fi
 
 
 ### Create the storage pool for the cluster.
-if [ "$(sudo virsh pool-list --all --name | egrep '^$CLUSTER_NAME$')" != "" ] ; then
+if [ "$(sudo virsh pool-list --all --name | egrep '^$CLUSTER_NAME\s*$')" != "" ] ; then
     echo "$(date +%T) INFO: Storage Pool already exists."
 else
     sudo mkdir -p $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME
