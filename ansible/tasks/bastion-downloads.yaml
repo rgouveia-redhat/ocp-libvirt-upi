@@ -260,7 +260,7 @@
     daemon_reload: yes
 
 - name: Wait for port 5000 to become open on the host
-  wait_for:
+  ansible.builtin.wait_for:
     port: 5000
     delay: 5
 
