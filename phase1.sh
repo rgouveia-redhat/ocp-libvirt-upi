@@ -155,7 +155,7 @@ fi
 
 
 ### Create the storage pool for the cluster.
-if [ "$(sudo virsh pool-list --all --name | grep $CLUSTER_NAME)" != "" ] ; then
+if [ "$(sudo virsh pool-list --all --name | egrep '^$CLUSTER_NAME$')" != "" ] ; then
     echo "$(date +%T) INFO: Storage Pool already exists."
 else
     sudo mkdir -p $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME
