@@ -1,7 +1,8 @@
 #version=RHEL8
+# Reboot after installation
+reboot
 # Use graphical install
 graphical
-
 
 %packages
 @^minimal-environment
@@ -27,11 +28,9 @@ network  --hostname=bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
 firstboot --enable
 
 ignoredisk --only-use=vda
-autopart
+autopart --nohome
 # Partition clearing information
 clearpart --none --initlabel
-
-reboot
 
 # System timezone
 timezone Europe/London --isUtc
