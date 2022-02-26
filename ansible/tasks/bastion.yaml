@@ -43,11 +43,10 @@
 
 # We only want the bastion nameserver as active.
 # Disable the nameserver provided by the "default" network.
-### TODO: Ideally access server facts and get the connection name.
 
 - block:
   - name: Disable the nameserver provided by the "default" network
-    ansible.builtin.shell: nmcli connection modify enp1s0 ipv4.ignore-auto-dns yes
+    ansible.builtin.shell: nmcli connection modify {{ ansible_facts.default_ipv4.interface }} ipv4.ignore-auto-dns yes
 
   - name: restart NetworkManager
     ansible.builtin.systemd:
