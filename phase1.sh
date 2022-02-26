@@ -260,7 +260,7 @@ fi
 
 
 ### Start bastion and wait for ip address.
-if [ "$(sudo virsh domstate c4-bastion)" != "running" ]; then
+if [ "$(sudo virsh domstate ${CLUSTER_NAME}-bastion)" != "running" ]; then
     sudo virsh start ${CLUSTER_NAME}-bastion
 fi
 
