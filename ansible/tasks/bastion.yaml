@@ -1,5 +1,18 @@
 ---
 
+- name: Free Physical Extents (PE)
+  ansible.builtin.shell:
+    cmd: vgdisplay | grep -oP 'Free  PE / Size[[:space:]]+\K[[:digit:]]+'
+  register: free_pe
+
+- debug:
+    var: free_pe
+
+- name: Take back the space reserved for /home.
+  ansible.builtin.shell:
+    cmd: lvextend --resizefs --extents +100%FREE {{ ansible_facts.proc_cmdline.root }}
+  when: free_pe.stdout_lines > 0
+
 - name: Update Server
   yum:
     name: '*'
