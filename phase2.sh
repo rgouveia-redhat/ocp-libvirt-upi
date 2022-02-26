@@ -62,8 +62,39 @@ echo "
 
 $(date +%T) INFO: Phase 2 (Pre-install steps) sucessfully created.
 
-SSH in to the bastion host and run openshift-install:
 
-./start-env.sh
-ssh -i ssh/id_rsa root@bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
-openshift-install --dir ${CLUSTER_NAME} --log-level debug wait-for bootstrap-complete"
+- To define host variables to open the web console, execute:
+
+  ./start-env.sh
+
+- To SSH in to the bastion host, execute:
+
+  ssh -i ssh/id_rsa root@bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
+
+
+In the bastion host:
+
+- To keep track of the installation, execute:
+
+  openshift-install --dir ${CLUSTER_NAME} --log-level debug wait-for bootstrap-complete
+
+  And after that:
+
+  openshift-install --dir ocp4/ wait-for install-complete
+
+  Note: In metal UPI, the openshift-install only monitors the installation.
+ 
+  
+- To keep track of Pending certificates, execute:
+
+  oc get csr -o name | xargs oc adm certificate approve
+
+
+- To see the evolution of the installation, execute:
+
+  watch \"oc get clusterversion ; oc get co ; oc get nodes ; oc get csr\"
+
+
+Note: To start the installation, boot all the nodes and select the role assigned.
+
+"
