@@ -43,28 +43,19 @@ fi
 cd ..
 
 
-# Generate start script.
-sed \
-    -e "s#\${CLUSTER_NAME}#$CLUSTER_NAME#g" \
-    -e "s#\${CLUSTER_DOMAIN}#$CLUSTER_DOMAIN#g" \
-    -e "s#\${LIBVIRT_NETWORK_PREFIX}#$LIBVIRT_NETWORK_PREFIX#g" \
-    files.phase2/cluster-start.sh.tpl > ./cluster-start.sh
-    chmod +x ./cluster-start.sh
-if ! [ $? -eq 0 ]; then
-    echo "$(date +%T) ERROR: Error generating cluster-start.sh script."
-    exit 5
-fi
-
-# Generate stop script.
-sed \
-    -e "s#\${CLUSTER_NAME}#$CLUSTER_NAME#g" \
-    -e "s#\${CLUSTER_DOMAIN}#$CLUSTER_DOMAIN#g" \
-    files.phase2/cluster-stop.sh.tpl > ./cluster-stop.sh
-    chmod +x ./cluster-stop.sh
-if ! [ $? -eq 0 ]; then
-    echo "$(date +%T) ERROR: Error generating cluster-stop.sh script."
-    exit 5
-fi
+echo "Generating cluster scripts..."
+for script in cluster-start cluster-stop cluster-delete; do
+    sed \
+        -e "s#\${CLUSTER_NAME}#$CLUSTER_NAME#g" \
+        -e "s#\${CLUSTER_DOMAIN}#$CLUSTER_DOMAIN#g" \
+        -e "s#\${LIBVIRT_NETWORK_PREFIX}#$LIBVIRT_NETWORK_PREFIX#g" \
+        files.phase2/${script}.sh.tpl > ./${script}.sh
+        chmod +x ./${script}.sh
+    if ! [ $? -eq 0 ]; then
+        echo "$(date +%T) ERROR: Error generating ${script}.sh script."
+        exit 5
+    fi
+done
 
 
 echo "
