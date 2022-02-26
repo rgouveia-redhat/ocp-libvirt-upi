@@ -11,7 +11,7 @@
 - name: Take back the space reserved for /home.
   ansible.builtin.shell:
     cmd: lvextend --resizefs --extents +100%FREE {{ ansible_facts.proc_cmdline.root }}
-  when: free_pe.stdout_lines > 0
+  when: free_pe.stdout | int > 0
 
 - name: Update Server
   yum:
