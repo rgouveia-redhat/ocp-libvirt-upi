@@ -265,11 +265,13 @@ if [ "$(sudo virsh domstate ${CLUSTER_NAME}-bastion)" != "running" ]; then
 fi
 
 bastion_ip=""
+echo -n "Waiting for bastion IP..."
 while [ "$bastion_ip" == "" ]; do
+    echo -n "."
+    sleep $DELAY
 	bastion_ip=$(sudo virsh domifaddr ${CLUSTER_NAME}-bastion | egrep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
-    #echo "Waiting for bastion IP..."
-    #sleep $DELAY
 done
+echo
 echo "$(date +%T) INFO: Bastion IP: $bastion_ip"
 
 
