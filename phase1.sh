@@ -26,11 +26,10 @@ if ! [ -f "$PULL_SECRET" ]; then
   exit -1
 fi
 
-echo "
 
-IMPORTANT
-This script uses the values defined in the 'Settings' file.
-Feel free to adjust the values to your needs.
+echo "
+  IMPORTANT: This script uses the values defined in the 'Settings' file.
+             Feel free to adjust the values to your needs.
 
 These are the current values for your reference:
 
@@ -51,26 +50,18 @@ OPENSHIFT_MIRROR_BASE=$OPENSHIFT_MIRROR_BASE
 
 PULL_SECRET='$PULL_SECRET'
 PULL_SECRET_EMAIL='$PULL_SECRET_EMAIL'
+"
 
-BASTION_DISK_SIZE=$BASTION_DISK_SIZE
-BASTION_CPUS=$BASTION_CPUS
-BASTION_MEMORY_SIZE=$BASTION_MEMORY_SIZE
+echo -e "Bastion $BASTION_DISK_SIZE $BASTION_CPUS $BASTION_MEMORY_SIZE
+Bootstrap $BOOTSTRAP_DISK_SIZE $BOOTSTRAP_CPUS $BOOTSTRAP_MEMORY_SIZE
+Master $MASTER_DISK_SIZE $MASTER_CPUS $MASTER_MEMORY_SIZE
+Worker $WORKER_DISK_SIZE $WORKER_CPUS $WORKER_MEMORY_SIZE
+" | column -N 'Role,Disk Size,CPUs, Memory' -t
 
-BOOTSTRAP_DISK_SIZE=$BOOTSTRAP_DISK_SIZE
-BOOTSTRAP_CPUS=$BOOTSTRAP_CPUS
-BOOTSTRAP_MEMORY_SIZE=$BOOTSTRAP_MEMORY_SIZE
-
-MASTER_DISK_SIZE=$MASTER_DISK_SIZE
-MASTER_CPUS=$MASTER_CPUS
-MASTER_MEMORY_SIZE=$MASTER_MEMORY_SIZE
-
-WORKER_DISK_SIZE=$WORKER_DISK_SIZE
-WORKER_CPUS=$WORKER_CPUS
-WORKER_MEMORY_SIZE=$WORKER_MEMORY_SIZE
-
-
-Do you want to continue? Press Enter or CTRL+C to abort."
+echo
+echo -n "Do you want to continue? Press Enter or CTRL+C to abort."
 read tmp
+echo
 
 
 ### Check for sudo privileges
