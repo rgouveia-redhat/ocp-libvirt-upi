@@ -1,51 +1,60 @@
-# Untested!!!
-
-auth --enableshadow --passalgo=sha512
-cdrom
-text
-
-rootpw --iscrypted $6$f/dv93KmK1kDGrrA$LMvsl5cdPTdhpqLPBUxzRnxfmHevZuav2kSOVjGWNKkRHwE0nxCeXCR3l/ohakXJxJ96775iDbUUh10b60qy60
-
-timezone Europe/Lisbon --isUtc
-firstboot --disable
-keyboard --vckeymap=gb --xlayouts='gb'
-lang en_GB.UTF-8
-
-network  --bootproto=dhcp --device=eth0 --ipv6=auto --activate
-network  --hostname=server.example.com
-
-bootloader --location=mbr --boot-drive=vda
-
-ignoredisk --only-use=vda
-clearpart --all --initlabel --drives=vda
-
-part /boot --fstype="xfs" --ondisk=vda --size=500
-part pv.1 --fstype="lvmpv" --ondisk=vda --size=9500
-volgroup server --pesize=4096 pv.1
-logvol /home  --fstype="xfs" --size=1000 --name=home --vgname=server
-logvol /  --fstype="xfs" --size=5000 --name=root --vgname=server
-logvol swap  --fstype="swap" --size=1000 --name=swap --vgname=server
-
+# Reboot after installation
 reboot
+# Use graphical install
+graphical
 
 %packages
-@^minimal
-@core
-chrony
--iwl*
+@^minimal-environment
+@container-management
+@guest-agents
+@headless-management
+@standard
+kexec-tools
 
 %end
 
-#
+# Keyboard layouts
+keyboard --xlayouts='gb'
+# System language
+lang en_GB.UTF-8
+
+# Network information
+network  --bootproto=dhcp --device=enp1s0 --noipv6 --activate
+network  --bootproto=static --device=enp2s0 --gateway=${LIBVIRT_NETWORK_PREFIX}.1 --ip=${LIBVIRT_NETWORK_PREFIX}.3 --nameserver=${LIBVIRT_NETWORK_PREFIX}.3 --netmask=255.255.255.0 --noipv6 --activate
+network  --hostname=bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
+
+# Run the Setup Agent on first boot
+firstboot --enable
+
+ignoredisk --only-use=vda
+autopart --nohome
+# Partition clearing information
+clearpart --none --initlabel
+
+# System timezone
+timezone Europe/London --isUtc
+
+# Root password
+rootpw --iscrypted $6$duAHa0uyW/T9n75W$3yTl/YuBpzN7rRKG/WUH1pB8A0pYyvh07KcHUY2IRxiKPO8OGL9zJKgFshHUQYjeUYq2zEO20tu/iStus8Rw8/
+
+%addon com_redhat_kdump --disable --reserve-mb='auto'
+
+%end
+
+%anaconda
+pwpolicy root --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+pwpolicy user --minlen=6 --minquality=1 --notstrict --nochanges --emptyok
+pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+%end
+
 # Add custom post scripts after the base post.
-#
 %post
 
 #---- Install our SSH key ----
 mkdir -m0700 /root/.ssh/
 
 cat <<EOF >/root/.ssh/authorized_keys
-SSH_KEY_PLACEHOLDER
+${SSH_KEY}
 EOF
 
 ### set permissions
