@@ -19,7 +19,7 @@ BASTION_INSTALL_TYPE='redhat'
 # Where is the ISO file to create the bastion system?
 # Choose one according to BASTION_INSTALL_TYPE!
 BASTION_INSTALL_ISO='/var/lib/libvirt/images/rhel-8.5-x86_64-boot.iso'
-#BASTION_INSTALL_ISO='/var/lib/libvirt/images/CentOS-Stream-8-x86_64-20220223-boot.iso'
+#BASTION_INSTALL_ISO='/var/lib/libvirt/images/CentOS-Stream-8-x86_64-20220223-dvd1.iso'
 #BASTION_INSTALL_ISO='/var/lib/libvirt/images/Fedora-Server-dvd-x86_64-34-1.2.iso'
 
 # The bastion system will be the cluster authorative nameserver
