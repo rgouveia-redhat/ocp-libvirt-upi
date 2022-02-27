@@ -72,29 +72,33 @@ $(date +%T) INFO: Phase 2 (Pre-install steps) sucessfully created.
   ssh -i ssh/id_rsa root@bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
 
 
-In the bastion host:
+### In the bastion host: ###
 
 - To keep track of the installation, execute:
 
-  openshift-install --dir ${CLUSTER_NAME} --log-level debug wait-for bootstrap-complete
+    openshift-install --dir ${CLUSTER_NAME} --log-level debug wait-for bootstrap-complete
 
   And after that:
 
-  openshift-install --dir ocp4/ wait-for install-complete
+    openshift-install --dir ocp4/ wait-for install-complete
 
   Note: In metal UPI, the openshift-install only monitors the installation.
- 
-  
+
+
 - To keep track of Pending certificates, execute:
 
-  oc get csr -o name | xargs oc adm certificate approve
+    oc get csr -o name | xargs oc adm certificate approve
+
+  or:
+
+    oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' | xargs oc adm certificate approve
 
 
 - To see the evolution of the installation, execute:
 
-  watch \"oc get clusterversion ; oc get co ; oc get nodes ; oc get csr\"
+    watch \"oc get clusterversion ; oc get co ; oc get nodes ; oc get csr\"
 
 
-Note: To start the installation, boot all the nodes and select the role assigned.
+Note: To start the installation, simply boot all the nodes and select the role assigned in the PXE menu. After the first boot it's automated.
 
 "
