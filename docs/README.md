@@ -33,11 +33,13 @@ With the UPI method, the user is responsible for creating the required infrastru
 
 This is doable with Libvirt, but it's a lot of manual work, and it takes a lot of time. So, I created this set of tool to assist with the process.
 
-# What does it do so far?
+## What does it do so far?
 
-The first release will prepare the infrastructure for a disconnected installation of OpenShift of your choice.
+This first release will prepare the infrastructure for a disconnected installation of OpenShift 4 of your choice.
 
-# What is automated?
+> Disclaimer: Tested only with some 4.9.x versions.
+
+## What is automated?
 
 - The creation in Libvirt of:
   - the storage pool in Libvirt
@@ -59,7 +61,7 @@ The first release will prepare the infrastructure for a disconnected installatio
   - Assemble the install-config.yaml
   - Add the ignition files to the HTTP Server
 
-# Requirements
+## Requirements
 
 - A Red Hat based system for the hypervisor.
   - Fedora Desktop 35 is tested, but should work with CentOS 8 and Red Hat 8.x variants.
@@ -68,6 +70,8 @@ The first release will prepare the infrastructure for a disconnected installatio
 - ISO file for the bastion installation.
   - Fedora Server 35, CentOS 8, and Red Hat 8.5 tested.
 - pull secret for the cluster installation.
+
+> Disclaimer: 100% of tests done in an SSD disk.
 
 # How to use?
 
@@ -91,13 +95,13 @@ $ cp Settings-example Settings
 $ ./phase1.sh
 ```
 
-> Note: The script `phase1.sh` creates the infrastructure, and the script `phase2.sh` configures the bastion system. In case of an error, it is safe to just rerun any of these two scripts. In case of a successful execution, `phase1.sh` will invoke `phase2.sh`.
+> Note: The script `phase1.sh` creates the infrastructure, and the script `phase2.sh` configures the bastion system. In case of an error, it is safe to rerun any of these two scripts. In case of a successful execution, `phase1.sh` will invoke `phase2.sh`.
 
->> Don't try to run `phase2.sh` without a successful execution of `phase1.sh`.
+> Don't try to run `phase2.sh` without a successful execution of `phase1.sh`.
 
->> Don't try to install OpenShift without a successful execution of `phase2.sh`
+> Don't try to install OpenShift without a successful execution of `phase2.sh`
 
-# How to install OpenShift?
+## How to install the cluster?
 
 After a successful execution of the script `phase2.sh`, the infrastructure is ready for the cluster installation.
 
@@ -115,7 +119,7 @@ The hosts will boot via PXE, and you will see the menus:
 
 > Important: the only important step now is to wait to approve certificates from the workers.
 
-# What to do during the installation?
+## What to do during the installation?
 
 OpenShift has many moving parts, and it is normal to see a lot of warnings and errors. Be patient!
 
@@ -148,3 +152,16 @@ When the above command displays certificates in `Pending` state, then execute th
 ```
 
 Hopefully, you now have an OpenShift cluster.
+
+# FAQ
+
+## Why didn't you used `tool x` instead?
+
+This was mostly a learning experience for me. However, I did use the inspiration of many other tools to create this one.
+
+## Why a disconnected installation by default? 
+
+There are already many tools, and YouTube videos that do and show how to install OpenShift in a connected way. The disconnected option has two reasons:
+
+1. I encounter a lot of deployments using the disconnected option, and I can't find a decent lab to run reproducers.
+2. Currently, I don't have a very fast internet, so each installation takes hours. A registry mirror is a nice way to cut the installation time off.
