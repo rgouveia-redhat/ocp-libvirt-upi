@@ -60,3 +60,4 @@ m4/lt~obsolete.m4
 Makefile
 ocp-libvirt-upi.theia-workspace
 ansible/test.yaml
+.vscode/ltex.dictionary.en-US.txt
