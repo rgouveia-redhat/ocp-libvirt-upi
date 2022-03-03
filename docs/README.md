@@ -5,11 +5,11 @@
 
 This project, as many open source projects, started as an itch that I had to scratch.
 
-Due to my $dayjob, I frequently need to quickly access a cluster with a specific version to test something. I have a local Fedora box which serves as my gaming machine, and I don't want to re-install it with another platform, like Red Hat Virtualization. In addition my Box does not do nested virtualization, so these options are not possible for me anyway.
+Due to my $dayjob, I frequently need to quickly access a cluster with a specific version to test something. I have a local Fedora box which serves as my gaming machine, and I don't want to re-install it with another platform, like oVirt/Red Hat Virtualization. In addition, my gaming box does not support nested virtualization, so these options are not possible for me at the moment.
 
-An important requirement is that the installation is as close as possible to a supported OpenShift installation.
+Although, using Libvirt, which is an unsupported platform, an important requirement for me is that the installation is as close as possible to a supported OpenShift installation.
 
-Looking at the available options from the official [openshift-install Github page](https://github.com/openshift/installer) the analysis is as follows:
+Looking at the available options from the official [openshift-install Github page](https://github.com/openshift/installer) my analysis is as follows:
 
 ## Supported Installer-provisioned infrastructure (IPI)
 
@@ -19,7 +19,7 @@ Looking at the available options from the official [openshift-install Github pag
 | Metal, OpenStack, Power, RHV/oVirt, vSphere, z/VM | Hardware requirements not available |
 | Libvirt with KVM | Development only |
 
-With the IPI method, the openshift-install binary connects to the configured provider, and creates the required infrastructure for the installation. The Libvirt option looks really nice, however, I had bad experiences trying to install older versions, and it's not supported.
+With the IPI method, the openshift-install binary connects to the configured provider, and creates the required infrastructure for the installation. The Libvirt option looks really nice, however, I had bad experiences trying to install older versions, and it's, obviously, not supported.
 
 ## Supported User-provisioned infrastructure (UPI)
 
@@ -31,11 +31,11 @@ With the IPI method, the openshift-install binary connects to the configured pro
 
 With the UPI method, the user is responsible for creating the required infrastructure: hosts, dns, dhcp, etc.
 
-This is doable with Libvirt, but it's a lot of manual work, and it takes a lot of time. So, I created this set of tool to assist with the process.
+This is doable with Libvirt, but it's a lot of manual work, and it takes a lot of time. So, I created this set of tools to assist with the process.
 
 ## What does it do so far?
 
-This first release will prepare the infrastructure for a disconnected installation of OpenShift 4 of your choice.
+This first release will prepare the infrastructure for a disconnected installation of OpenShift 4, with your chosen version.
 
 > Disclaimer: Tested only with some 4.9.x versions.
 
@@ -71,7 +71,7 @@ This first release will prepare the infrastructure for a disconnected installati
   - Fedora Server 35, CentOS 8, and Red Hat 8.5 tested.
 - pull secret for the cluster installation.
 
-> Disclaimer: 100% of tests done in an SSD disk.
+> Disclaimer: 100% of tests executed with SSD disks.
 
 # How to use?
 
@@ -105,7 +105,7 @@ $ ./phase1.sh
 
 After a successful execution of the script `phase2.sh`, the infrastructure is ready for the cluster installation.
 
-With the UPI, the `openshift-install` binary only monitors the installation, so all you have to do is boot the virtual machines and on their first boot select the option that matches the role of the system.
+With the UPI, the `openshift-install` binary only monitors the installation, so all you have to do is boot the virtual machines, and on their first boot select the option that matches the role of the system.
 
 The hosts will boot via PXE, and you will see the menus:
 
@@ -125,7 +125,7 @@ OpenShift has many moving parts, and it is normal to see a lot of warnings and e
 
 The bastion host was configured with all the necessary tools. This is what you can do:
 
-In a terminal, execute:
+In a bastion terminal, execute:
 
 ```
 [root@bastion ~]# openshift-install --dir <cluster_name> wait-for bootstrap-complete                 
@@ -161,7 +161,7 @@ This was mostly a learning experience for me. However, I did use the inspiration
 
 ## Why a disconnected installation by default? 
 
-There are already many tools, and YouTube videos that do and show how to install OpenShift in a connected way. The disconnected option has two reasons:
+There are already many tools, and YouTube videos, that install and show how to install OpenShift in a connected way. The disconnected decision was due to the following:
 
-1. I encounter a lot of deployments using the disconnected option, and I can't find a decent lab to run reproducers.
-2. Currently, I don't have a very fast internet, so each installation takes hours. A registry mirror is a nice way to cut the installation time off.
+1. I encounter a lot of deployments using the disconnected option, and I couldn't find a quick lab to run a reproducer.
+2. Currently, I don't have a very fast internet, so each installation takes hours. A registry mirror is a way to reduce the installation time.
