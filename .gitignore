@@ -4,6 +4,7 @@ pull-secret.*
 start-env.sh
 cluster-start.sh
 cluster-stop.sh
+cluster-delete.sh
 files.phase1/anaconda.ks
 ansible/hosts
 ansible/facts/*
