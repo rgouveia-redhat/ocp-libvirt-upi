@@ -317,7 +317,7 @@
 # openshift-install
 - name: Get the pull secret in a a variable - version with registry credentials
   ansible.builtin.shell:
-    cmd: cat registry/pull-secret.json | jq -c
+    cmd: cat registry/pull-secret.json | jq -c .
   register: pull_secret
 
 - debug:
