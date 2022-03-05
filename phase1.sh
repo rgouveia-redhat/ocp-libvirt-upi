@@ -465,13 +465,8 @@ if ! [ $? -eq 0 ]; then
     exit 5
 fi
 
-echo "$(date +%T) INFO: Always run './start-env.sh' to access OpenShift Web Console..."
-./start-env.sh
 
-
-echo "
-
-$(date +%T) INFO: Phase 1 (Infra) sucessfully created.
+echo "$(date +%T) INFO: Phase 1 (Infra) sucessfully created.
 
 Moving to Phase 2 - Preparing Bastion VM for the OpenShift Install."
 
