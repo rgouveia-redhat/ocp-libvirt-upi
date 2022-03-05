@@ -119,10 +119,6 @@
     line: 'export KUBECONFIG=/root/{{ cluster_name }}/auth/kubeconfig'
 
 
-#  ansible.builtin.shell:
-#    cmd: echo -e "source <(oc completion bash)\nsource <(openshift-install completion bash)" >> /root/.bash_profile
-
-
 # Create CA
 # https://gist.github.com/fntlnz/cf14feb5a46b2eda428e000157447309
 # https://janikvonrotz.ch/2019/01/21/create-a-certificate-authority-ca-and-sign-server-certificates-without-prompting-using-openssl/
@@ -319,9 +315,9 @@
 
 
 # openshift-install
-- name: Get the pull secret in a a variable
-  ansible.builtin.command:
-    cmd: cat /root/pull-secret.txt
+- name: Get the pull secret in a a variable - version with registry credentials
+  ansible.builtin.shell:
+    cmd: cat registry/pull-secret.json | jq -c
   register: pull_secret
 
 - debug:
