@@ -7,7 +7,7 @@ Type=simple
 WorkingDirectory=/root
 TimeoutStartSec=300
 ExecStartPre=-/usr/bin/podman rm -f registry
-ExecStart=/usr/bin/podman run --name registry --net host -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.pem -e REGISTRY_HTTP_TLS_KEY=/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.key -e REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/registry -v /opt/registry/auth:/auth:z -v /opt/registry/certs:/certs:z -v /opt/registry/data:/registry:z -v /opt/registry/conf/config.yml:/etc/docker/registry/config.yml:z registry:latest
+ExecStart=/usr/bin/podman run --name registry --net host -e REGISTRY_AUTH=htpasswd -e REGISTRY_AUTH_HTPASSWD_REALM=Registry -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd -e REGISTRY_HTTP_SECRET=YourOwnLongRandomSecret -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.pem -e REGISTRY_HTTP_TLS_KEY=/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.key -e REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/registry -v /opt/registry/auth:/auth:z -v /opt/registry/certs:/certs:z -v /opt/registry/data:/registry:z -v /opt/registry/conf/config.yml:/etc/docker/registry/config.yml:z registry:latest
 ExecStop=-/usr/bin/podman rm -f image-registry
 Restart=always
 RestartSec=30s
