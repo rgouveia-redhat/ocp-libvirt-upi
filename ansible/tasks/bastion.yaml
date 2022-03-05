@@ -13,6 +13,12 @@
     cmd: lvextend --resizefs --extents +100%FREE {{ ansible_facts.proc_cmdline.root }}
   when: free_pe.stdout | int > 0
 
+- name: Make sure /home does not exist in /etc/fstab
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '/home'
+    state: absent
+
 - name: Update Server
   yum:
     name: '*'
