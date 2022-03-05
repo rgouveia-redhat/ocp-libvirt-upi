@@ -66,8 +66,6 @@ if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
 fi
 
 
-exit
-
 # Stop cluster
 ./cluster-stop.sh
 
