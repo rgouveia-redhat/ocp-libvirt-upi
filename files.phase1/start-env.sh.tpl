@@ -22,3 +22,8 @@ for host in bastion api api-int openshift-console.apps bootstrap master1 master2
 done
 
 echo -e $output | column -t
+
+echo
+echo "##### Logging in to Bastion host #####"
+echo 
+ssh -i ssh/id_rsa root@bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
