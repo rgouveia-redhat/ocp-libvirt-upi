@@ -91,7 +91,7 @@ $(date +%T) INFO: Phase 2 (Pre-install steps) sucessfully created.
 
   or:
 
-    oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{"\\n"}}{{end}}{{end}}' | xargs oc adm certificate approve
+    oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{\"\\n\"}}{{end}}{{end}}' | xargs oc adm certificate approve
 
 
 - To see the evolution of the installation, execute:
