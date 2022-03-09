@@ -1,26 +1,3 @@
-- name: Create public NFS folder
-  file:
-    path: /public
-    state: directory
-    owner: nfsnobody
-    group: nfsnobody
-    mode: 0755
-
-- name: Create NFS configuration
-  copy:
-    src: files/server/exports
-    dest: /etc/
-    owner: root
-    group: root
-    mode: 0644
-  notify:
-    - restart nfs-server
-
-- name: Enable and start NFS service
-  systemd:
-    name: nfs-server.service
-    enabled: true
-    state: started
 
 
 - name: Install needed package iSCSI target
@@ -83,3 +60,34 @@
     - rpc-bind
     - mountd
     - iscsi-target
+
+
+- name: Create repo metadata
+  command: /usr/bin/createrepo /var/www/html/repos/
+  args:
+    creates: /var/www/html/repos/repodata/
+
+
+- name: Install needed packages for IPA Server
+  yum:
+    name: ipa-server
+    state: latest
+
+- name: Update /etc/hosts with server ip. Required for the IPA Server
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ ansible_default_ipv4.address }} {{ ansible_fqdn }} {{ ansible_hostname }}"
+
+
+- block:
+    - name: Install IPA Server
+      shell: /usr/sbin/ipa-server-install --unattended --admin-password=ex200server --ds-password=ex200server --domain=example.com --realm=EXAMPLE.COM
+      args:
+        creates: /run/dirsrv/slapd-EXAMPLE-COM.pid
+
+  rescue:
+    - name: Uninstalling IPA server...
+      shell: /usr/sbin/ipa-server-install --unattended  --uninstall
+    - fail:
+        msg: "Errors installing IPA Server. Will uninstall. Check the logs and try again."
+
