@@ -180,6 +180,10 @@
     - data
     - conf
 
+
+# If available, sync local mirror data before starting registry
+
+
 # Create bastion cert
 - name: Checking the existence of the bastion cert
   ansible.builtin.stat:

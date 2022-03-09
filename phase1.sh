@@ -50,6 +50,8 @@ OPENSHIFT_MIRROR_BASE=$OPENSHIFT_MIRROR_BASE
 
 PULL_SECRET='$PULL_SECRET'
 PULL_SECRET_EMAIL='$PULL_SECRET_EMAIL'
+
+REGISTRY_NFS=$REGISTRY_NFS
 "
 
 echo -e "Bastion $BASTION_DISK_SIZE $BASTION_CPUS $BASTION_MEMORY_SIZE
@@ -281,10 +283,12 @@ EOF
 echo "$(date +%T) INFO: Generating the Ansible vars file..."
 
 reverse=$(echo $LIBVIRT_NETWORK_PREFIX | awk -F. '{print $3 "." $2 "." $1}')
+
 echo "---
 network_prefix: '$LIBVIRT_NETWORK_PREFIX'
 network_reverse: '$reverse'
-disconnected: '$DISCONNECTED'
+disconnected: $DISCONNECTED
+registry_nfs: $REGISTRY_NFS
 arch: '$ARCH'
 openshift_mirror_base: '$OPENSHIFT_MIRROR_BASE'
 cluster_version: '$CLUSTER_VERSION'

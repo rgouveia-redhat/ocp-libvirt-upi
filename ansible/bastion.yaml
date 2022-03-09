@@ -11,3 +11,14 @@
 
   tasks:
     - import_tasks: tasks/bastion.yaml
+    
+    - debug:
+        var: registry_nfs
+      tags:
+        - debug
+
+    - name: Registry NFS
+      ansible.builtin.import_tasks: tasks/registry-nfs.yaml
+      when: registry_nfs == true
+      tags:
+        - debug

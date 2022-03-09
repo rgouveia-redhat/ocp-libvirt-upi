@@ -1,0 +1,42 @@
+---
+# https://docs.openshift.com/container-platform/4.9/storage/persistent_storage/persistent-storage-nfs.html
+# https://docs.openshift.com/container-platform/4.9/registry/configuring_registry_storage/configuring-registry-storage-baremetal.html
+
+- name: Install needed packages
+  ansible.builtin.package:
+    name:
+      - nfs-utils
+    state: present
+
+- name: Create NFS folder /exports
+  ansible.builtin.file:
+    path: /exports/registry
+    state: directory
+    owner: nobody
+    group: nobody
+    mode: 0755
+
+- name: Create NFS configuration
+  ansible.builtin.lineinfile:
+    path: /etc/exports
+    regexp: '^/exports/registry'
+    line: '/exports/registry {{ network_prefix }}.0/24(rw,root_squash)'
+
+- name: Set virt_use_nfs flag on and keep it persistent across reboots
+  ansible.posix.seboolean:
+    name: virt_use_nfs
+    state: yes
+    persistent: yes
+
+- name: Permit traffic for NFSv4
+  ansible.posix.firewalld:
+    port: "2049/tcp"
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: Enable and start NFS service
+  ansible.builtin.systemd:
+    name: nfs-server.service
+    enabled: true
+    state: started
