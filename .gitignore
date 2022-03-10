@@ -1,14 +1,3 @@
-Settings
-ssh/*
-pull-secret.*
-start-env.sh
-cluster-start.sh
-cluster-stop.sh
-cluster-delete.sh
-files.phase1/anaconda.ks
-ansible/hosts
-ansible/facts/*
-ansible/vars/common.yaml
 
 # http://www.gnu.org/software/automake
 
@@ -59,6 +48,18 @@ m4/lt~obsolete.m4
 # can automatically generate from config.status script
 # (which is called by configure script))
 Makefile
+
 ocp-libvirt-upi.theia-workspace
 ansible/test.yaml
 .vscode/ltex.dictionary.en-US.txt
+files/anaconda.ks
+Settings
+ssh/*
+pull-secret.*
+start-env.sh
+cluster-start.sh
+cluster-stop.sh
+cluster-delete.sh
+ansible/hosts
+ansible/facts/*
+ansible/vars/common.yaml
