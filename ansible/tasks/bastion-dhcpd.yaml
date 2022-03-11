@@ -1,0 +1,25 @@
+---
+# dhcpd: ips, names and mac addresses.
+# /etc/dhcp/dhcpd.conf
+
+- name: Configure /etc/dhcp/dhcpd.conf
+  ansible.builtin.template:
+    src: files/dhcpd.conf.j2
+    dest: /etc/dhcp/dhcpd.conf
+    owner: root
+    group: root
+    mode: '0640'
+    backup: no
+
+- name: restart and enable dhcpd.service
+  ansible.builtin.systemd:
+    name: dhcpd.service
+    state: started
+    enabled: yes
+
+- name: Configure Firewalld
+  firewalld:
+    service: dhcp
+    state: enabled
+    permanent: true
+    immediate: true

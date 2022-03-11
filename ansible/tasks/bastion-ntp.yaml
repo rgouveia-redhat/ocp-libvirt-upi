@@ -1,0 +1,26 @@
+---
+
+# ntp server!!!
+# https://www.golinuxcloud.com/configure-chrony-ntp-server-client-force-sync/
+
+- name: Configure NTP as Server
+  ansible.builtin.template:
+    src: files/chrony.conf.j2
+    dest: /etc/chrony.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+- name: restart and enable chronyd.service
+  ansible.builtin.systemd:
+    name: chronyd.service
+    state: started
+    enabled: yes
+
+- name: Configure Firewalld
+  firewalld:
+    service: ntp
+    state: enabled
+    permanent: true
+    immediate: true

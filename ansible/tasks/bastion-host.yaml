@@ -1,0 +1,75 @@
+---
+
+- name: Get Free Physical Extents (PE)
+  ansible.builtin.shell:
+    cmd: vgdisplay | grep -oP 'Free  PE / Size[[:space:]]+\K[[:digit:]]+'
+  register: free_pe
+
+- debug:
+    var: free_pe
+  tags:
+    - debug
+
+- block:
+  - name: Take back the space reserved for /home.
+    ansible.builtin.shell:
+      cmd: lvextend --resizefs --extents +100%FREE {{ ansible_facts.proc_cmdline.root }}
+
+  - name: Make sure /home does not exist in /etc/fstab
+    ansible.builtin.lineinfile:
+      path: /etc/fstab
+      regexp: '/home'
+      state: absent
+  when: free_pe.stdout | int > 0
+
+- name: Update Server
+  yum:
+    name: '*'
+    state: latest
+    update_cache: yes
+  register: updated
+
+# If updated, reboot server and wait for SSH readiness.
+- block:
+    - name: Reboot Server
+      command: shutdown +1 -r
+
+    - name: Wait for reboot cycle
+      wait_for:
+        delay: 70
+        host: "{{ inventory_hostname }}"
+        port: 22
+        state: started
+      delegate_to: localhost
+  when: updated.changed == true
+
+- name: Install needed packages
+  ansible.builtin.package:
+    name:
+      - bash-completion
+      - vim
+      - haproxy
+      - ca-certificates
+      - skopeo
+      - wget
+      - bind
+      - bind-utils
+      - dhcp-server
+      - tftp-server
+      - syslinux
+      - httpd
+      - chrony
+    state: present
+
+# We only want the bastion nameserver as active.
+# Disable the nameserver provided by the "default" network.
+
+- block:
+  - name: Disable the nameserver provided by the "default" network
+    ansible.builtin.shell: nmcli connection modify {{ ansible_facts.default_ipv4.interface }} ipv4.ignore-auto-dns yes
+
+  - name: restart NetworkManager
+    ansible.builtin.systemd:
+      name: NetworkManager.service
+      state: restarted
+  when: ansible_dns.nameservers|length > 1

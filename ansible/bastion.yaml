@@ -1,22 +1,54 @@
 ---
 
-- name: Bastion Tasks
+- name: Bastion configuration tasks
   hosts: bastion
 
   vars_files:
     - vars/common.yaml
 
-  handlers:
-    - import_tasks: handlers/main.yaml
-
   tasks:
-    - import_tasks: tasks/bastion.yaml
-    
+
+    - name: Configure bastion host
+      ansible.builtin.import_tasks: tasks/bastion-host.yaml
+      tags:
+        - host
+
+    - name: Configure bastion named service
+      ansible.builtin.import_tasks: tasks/bastion-named.yaml
+      tags:
+        - named
+
+    - name: Configure bastion dhcpd service
+      ansible.builtin.import_tasks: tasks/bastion-dhcpd.yaml
+      tags:
+        - dhcpd
+
+    - name: Configure bastion tftp/pxe service
+      ansible.builtin.import_tasks: tasks/bastion-tftp.yaml
+      tags:
+        - tftp
+
+    - name: Configure bastion web server
+      ansible.builtin.import_tasks: tasks/bastion-web.yaml
+      tags:
+        - web
+
+    - name: Configure bastion haproxy service
+      ansible.builtin.import_tasks: tasks/bastion-haproxy.yaml
+      tags:
+        - haproxy
+
+    - name: Configure bastion ntp service
+      ansible.builtin.import_tasks: tasks/bastion-ntp.yaml
+      tags:
+        - ntp
+
     - debug:
         var: registry_nfs
       tags:
         - debug
 
+    # iscsi?
     - name: Registry NFS
       ansible.builtin.import_tasks: tasks/registry-nfs.yaml
       when: registry_nfs == true

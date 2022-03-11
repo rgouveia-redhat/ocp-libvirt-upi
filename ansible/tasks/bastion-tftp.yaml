@@ -1,0 +1,105 @@
+---
+
+# tftp: role per mac and default.
+# /var/lib/tftpboot/pxelinux.cfg/default
+
+- name: Make Network Boot Programs for BIOS based systems available
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /var/lib/tftpboot/
+    remote_src: yes
+  with_items:
+    - /usr/share/syslinux/memdisk
+    - /usr/share/syslinux/menu.c32
+    - /usr/share/syslinux/pxelinux.0
+    - /usr/share/syslinux/ldlinux.c32
+    - /usr/share/syslinux/libutil.c32
+
+- name: Create directory for PXE server configuration
+  file:
+    path: /var/lib/tftpboot/pxelinux.cfg
+    state: directory
+
+- name: Configure TFTP pxelinux.cfg/default
+  ansible.builtin.template:
+    src: files/tftp/default.j2
+    dest: /var/lib/tftpboot/pxelinux.cfg/default
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+- name: Configure TFTP pxelinux.cfg/bootstrap
+  ansible.builtin.template:
+    src: files/tftp/bootstrap.j2
+    dest: /var/lib/tftpboot/pxelinux.cfg/bootstrap
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+- name: Create a symbolic link for bootstrap mac address
+  ansible.builtin.file:
+    src: bootstrap
+    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ mac_bootstrap | replace(':','-') }}
+    owner: root
+    group: root
+    mode: '0644'
+    state: link
+
+- name: Configure TFTP pxelinux.cfg/masters
+  ansible.builtin.template:
+    src: files/tftp/master.j2
+    dest: /var/lib/tftpboot/pxelinux.cfg/master
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+- name: Create a symbolic link for masters mac address
+  ansible.builtin.file:
+    src: master
+    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ item | replace(':','-') }}
+    owner: root
+    group: root
+    mode: '0644'
+    state: link
+  with_items:
+    - "{{ mac_master1 }}"
+    - "{{ mac_master2 }}"
+    - "{{ mac_master3 }}"
+
+- name: Configure TFTP pxelinux.cfg/workers
+  ansible.builtin.template:
+    src: files/tftp/worker.j2
+    dest: /var/lib/tftpboot/pxelinux.cfg/worker
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+- name: Create a symbolic link for workers mac address
+  ansible.builtin.file:
+    src: worker
+    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ item | replace(':','-') }}
+    owner: root
+    group: root
+    mode: '0644'
+    state: link
+  with_items:
+    - "{{ mac_worker1 }}"
+    - "{{ mac_worker2 }}"
+    - "{{ mac_worker3 }}"
+
+- name: restart and enable tftp.service
+  ansible.builtin.systemd:
+    name: tftp.service
+    state: started
+    enabled: yes
+
+- name: Configure Firewalld
+  firewalld:
+    service: tftp
+    state: enabled
+    permanent: true
+    immediate: true

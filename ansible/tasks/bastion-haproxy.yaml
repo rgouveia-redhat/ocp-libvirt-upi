@@ -1,0 +1,51 @@
+---
+
+# haproxy ports 80, 443: names.
+# /etc/haproxy/haproxy.cfg
+
+- name: Configure HAProxy
+  ansible.builtin.template:
+    src: files/haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+# semanage port -a -t http_port_t -p tcp 6443
+- name: Allow haproxy to listen on tcp port 6443
+  community.general.seport:
+    ports: "{{ item }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+  with_items:
+    - 1936
+    - 6443
+    - 22623
+
+- name: restart and enable haproxy.service
+  ansible.builtin.systemd:
+    name: haproxy.service
+    state: started
+    enabled: yes
+
+- name: Configure Firewalld
+  firewalld:
+    service: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+  with_items:
+    - http
+    - https
+
+- name: Permit traffic in OpenShift 'api' and 'api-int' ports
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    immediate: yes
+    state: enabled
+  with_items:
+    - "6443/tcp"
+    - "22623/tcp"
