@@ -1,13 +1,7 @@
 # -*-Shell-script-*-
-#
-# This file contains functions to be used other scripts.
-#
 
 . script/ops.sh
 
-# TODO
-#$ oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"pvc":{"claim": ""}}}}'
-#$ oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"managementState":"Managed"}}'
 
 show_settings () {
 
@@ -137,9 +131,9 @@ libvirt_create_network () {
         echo "$(date +%T) INFO: Network already exists."
     else
         if [ $DISCONNECTED ] ; then
-            xml=$(eval "echo \"$(cat files.phase1/virt-network-isolated.xml)\"")
+            xml=$(eval "echo \"$(cat files/virt-network-isolated.xml)\"")
         else
-            xml=$(eval "echo \"$(cat files.phase1/virt-network-nat.xml)\"")
+            xml=$(eval "echo \"$(cat files/virt-network-nat.xml)\"")
         fi
         echo $xml > /tmp/network-tmp.xml
 
@@ -178,14 +172,14 @@ libvirt_create_bastion () {
     else
         # Variant. Check with 'osinfo-query os'.
         variant='centos8'
-        ks='files.phase1/centos.ks.tpl'
+        ks='files/centos.ks.tpl'
         if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
             variant='rhel8.5'
-            ks='files.phase1/redhat.ks.tpl'
+            ks='files/redhat.ks.tpl'
         fi
         if [ "$BASTION_INSTALL_TYPE" == "fedora" ]; then
             variant='fedora35'
-            ks='files.phase1/fedora.ks.tpl'
+            ks='files/fedora.ks.tpl'
         fi
 
         # Generate kickstart file.
@@ -195,7 +189,7 @@ libvirt_create_bastion () {
             -e "s#\${CLUSTER_DOMAIN}#$CLUSTER_DOMAIN#g" \
             -e "s#\${LIBVIRT_NETWORK_PREFIX}#$LIBVIRT_NETWORK_PREFIX#g" \
             -e "s#\${SSH_KEY}#$ssh_key#" \
-            $ks > files.phase1/anaconda.ks
+            $ks > files/anaconda.ks
         if ! [ $? -eq 0 ]; then
             echo "$(date +%T) ERROR: Error generating kickstart file"
             exit 5
@@ -211,18 +205,18 @@ libvirt_create_bastion () {
             --os-variant $variant \
             --network network=default,model=virtio \
             --network network=${CLUSTER_NAME},model=virtio \
-            --initrd-inject files.phase1/anaconda.ks \
+            --initrd-inject files/anaconda.ks \
             --extra-args 'inst.ks=file:/anaconda.ks' \
             --noautoconsole
 
+        rm files/anaconda.ks
+
         if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
             echo "
+$(date +%T) [ACTION REQUIRED] Open a console to the bastion vm and 
+                              complete the Red Hat Network authentication!
+                              Close the virt-viewer window when done."
 
-    $(date +%T) [ACTION REQUIRED] Open a console to the bastion vm and 
-                    complete the Red Hat Network authentication!
-                    Close the virt-viewer window when done.
-                    
-                    "
             sudo virt-viewer ${CLUSTER_NAME}-bastion
         fi
 
@@ -262,6 +256,7 @@ libvirt_create_bootstrap () {
             --network network=${CLUSTER_NAME},model=virtio \
             --noautoconsole
 
+        # We just need the macs to be generated. For now stop the vm.
         sudo virsh destroy ${CLUSTER_NAME}-bootstrap
     fi
 }
@@ -288,6 +283,7 @@ libvirt_create_masters () {
                 --network network=${CLUSTER_NAME},model=virtio \
                 --noautoconsole
 
+            # We just need the macs to be generated. For now stop the vm.
             sudo virsh destroy ${CLUSTER_NAME}-master$i
         fi
     done
@@ -315,6 +311,7 @@ libvirt_create_workers () {
                 --network network=${CLUSTER_NAME},model=virtio \
                 --noautoconsole
 
+            # We just need the macs to be generated. For now stop the vm.
             sudo virsh destroy ${CLUSTER_NAME}-worker$i
         fi
     done
@@ -405,146 +402,4 @@ pull_secret_email: '$PULL_SECRET_EMAIL'
             echo "mac_worker$i: '$mac'" >> ansible/vars/common.yaml
         fi
     done
-}
-
-
-configure_bastion () {
-
-    ### Use Ansible to configure bastion vm.
-    echo "$(date +%T) INFO: Waiting for SSH to be ready on bastion vm..."
-
-    ready=0
-    while [ $ready -eq 0 ]; do
-        ssh -q \
-            -o BatchMode=yes \
-            -o ConnectTimeout=10 \
-            -o UserKnownHostsFile=/dev/null \
-            -o StrictHostKeyChecking=no \
-            -i ../ssh/id_rsa root@${bastion_ip} exit
-        if [ $? -eq 0 ]; then
-            ready=1
-        else
-            echo -n "."
-            sleep 5
-        fi
-    done
-    echo
-
-    echo "$(date +%T) INFO: Installing Ansible dependencies..."
-    if ! [ -d ~/.ansible/collections/ansible_collections/community/general/ ]; then
-        ansible-galaxy collection install community.general
-    fi
-    if ! [ -d ~/.ansible/collections/ansible_collections/ansible/posix/ ]; then
-        ansible-galaxy collection install ansible.posix
-    fi
-
-    # Go to Ansible folder.
-    cd ansible
-
-    echo "$(date +%T) INFO: Check to make sure Ansible can proceed."
-    ansible \
-        --private-key=../ssh/id_rsa \
-        --ssh-extra-args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
-        -u root -i hosts all -m ping
-
-    if [ $? -eq 0 ]; then
-        echo "$(date +%T) INFO: Running Ansible Playbook to configure Systems..."
-
-        ansible-playbook \
-            --private-key=../ssh/id_rsa \
-            --ssh-extra-args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
-            -u root -i hosts bastion.yaml
-
-        if ! [ $? -eq 0 ]; then
-            echo "$(date +%T) ERROR: Ansible exited with errors. Fix the errors and rerun!"
-            exit 10
-        fi
-    else
-        echo "$(date +%T) ERROR: Ansible test failed. Fix the issue and run this command again."
-        exit 100
-    fi
-
-    # Back to script folder.
-    cd ..
-
-    exit
-
-
-    echo
-    echo "$(date +%T) INFO: Phase 2 - Preparing Bastion VM for the OpenShift Install."
-
-    # Go to Ansible folder.
-    cd ansible
-
-    echo "$(date +%T) INFO: Check to make sure Ansible can proceed."
-    ansible \
-        --private-key=../ssh/id_rsa \
-        --ssh-extra-args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
-        -u root -i hosts all -m ping
-
-    if [ $? -eq 0 ]; then
-        echo "$(date +%T) INFO: Running Ansible Playbook to configure Bastion..."
-
-        ansible-playbook \
-            --private-key=../ssh/id_rsa \
-            --ssh-extra-args="-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
-            -u root -i hosts bastion-phase2.yaml
-        if ! [ $? -eq 0 ]; then
-            echo "$(date +%T) ERROR: Ansible exited with errors. Fix the errors and rerun ./phase2.sh !"
-            exit 10
-        fi
-    else
-        echo "$(date +%T) ERROR: Ansible test failed. Fix the issue and run this command again."
-        exit 100
-    fi
-
-    # Back to script folder.
-    cd ..
-
-
-    echo "
-
-    $(date +%T) INFO: Phase 2 (Pre-install steps) sucessfully created.
-
-
-    - To define host variables to open the web console, execute:
-
-    ./start-env.sh
-
-    - To SSH in to the bastion host, execute:
-
-    ssh -i ssh/id_rsa root@bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
-
-
-    ### In the bastion host: ###
-
-    - To keep track of the installation, execute:
-
-        openshift-install --dir ${CLUSTER_NAME} wait-for bootstrap-complete
-
-    And after that:
-
-        openshift-install --dir ${CLUSTER_NAME} wait-for install-complete
-
-    Note: In metal UPI, the openshift-install only monitors the installation.
-
-
-    - To keep track of Pending certificates, execute:
-
-        oc get csr -o name | xargs oc adm certificate approve
-
-    or:
-
-        oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{\"\\n\"}}{{end}}{{end}}' | xargs oc adm certificate approve
-
-
-    - To see the evolution of the installation, execute:
-
-        watch \"oc get clusterversion ; oc get co ; oc get nodes ; oc get csr\"
-
-
-    Note: To start the installation, simply boot all the nodes and select the role assigned in the PXE menu. After the first boot it's automated.
-
-    "
-
 }

@@ -1,6 +1,6 @@
 # -*-Shell-script-*-
 
-# Following stop best practices:
+# Following 'stop cluster' best practices:
 # https://docs.openshift.com/container-platform/4.9/backup_and_restore/graceful-cluster-shutdown.html
 
 cluster_stop () {
@@ -9,6 +9,7 @@ cluster_stop () {
     echo "##### Stopping Cluster ${CLUSTER_NAME} #####"
     echo
 
+    # TODO: Test the readiness of the cluster API. If unavailable, fail fast.
     expire=$(ssh -i ssh/id_rsa -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN} "/root/bin/oc --kubeconfig /root/${CLUSTER_NAME}/auth/kubeconfig -n openshift-kube-apiserver-operator get secret kube-apiserver-to-kubelet-signer -o jsonpath='{.metadata.annotations.auth\.openshift\.io/certificate-not-after}'")
     if ! [ $? -eq 0 ]; then
         echo "Error getting cluster certificates expiration date. Skipping..."

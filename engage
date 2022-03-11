@@ -10,8 +10,14 @@ DELAY=10
 
 ### Validate settings.
 if ! [ -f Settings ]; then
-    echo "Error: Settings file does not exist yet.
-Create one from Settings-example and change to your needs."
+    echo "
+    Error: Settings file does not exist.
+           Make a copy from 'Settings-example', and 
+           edit 'Settings' according to your needs:
+
+           $ cp Settings-example Settings
+           
+           "
     exit -2
 fi
 source Settings
@@ -19,9 +25,20 @@ source Settings
 case "$1" in
 
 create)
+    . script/ops.sh
     . script/create.sh
+    . script/configure.sh
     create_infra
     configure_bastion
+    show_help_install
+    ;;
+
+# For debug only. Not documented option.
+ansible-only)
+    . script/ops.sh
+    . script/configure.sh
+    configure_bastion
+    show_help_install
     ;;
 
 env)

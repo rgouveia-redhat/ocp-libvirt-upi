@@ -1,6 +1,6 @@
 # -*-Shell-script-*-
 
-# Following start best practices:
+# Following 'start cluster' best practices:
 # https://docs.openshift.com/container-platform/4.9/backup_and_restore/graceful-cluster-restart.html
 
 cluster_start () {

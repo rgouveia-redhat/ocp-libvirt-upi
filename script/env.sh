@@ -2,6 +2,12 @@
 
 configure_env () {
 
+    # Bastion must be started
+    if [ "$(sudo virsh domstate ${CLUSTER_NAME}-bastion)" != "running" ]; then
+        echo "Error: Bastion is not running. Please start the cluster first."
+        exit -10
+    fi
+
     # Get cluster host interface
     INTERFACE=$(ip route | grep ${LIBVIRT_NETWORK_PREFIX} | grep -oP 'dev \K\w+')
 
@@ -13,7 +19,7 @@ configure_env () {
     echo "##### Current DNS configuration #####"
     echo
 
-    sudo resolvectl status ${INTERFACE}
+    resolvectl status ${INTERFACE}
 
     echo 
     echo "##### DNS validation #####"
