@@ -49,8 +49,8 @@
         - debug
 
     # iscsi?
-    - name: Registry NFS
-      ansible.builtin.import_tasks: tasks/registry-nfs.yaml
+    - name: Configure NFS Server for OpenShift Internal Registry
+      ansible.builtin.import_tasks: tasks/bastion-registry-nfs.yaml
       when: registry_nfs == true
       tags:
         - debug
