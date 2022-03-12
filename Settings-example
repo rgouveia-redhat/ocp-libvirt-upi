@@ -1,84 +1,134 @@
 #
-# Libvirt
+# Settings file.
+#
+# Change according to your needs. But, mind the instructions.
 #
 
-# Libvirt connection. Can be qemu:///system (server) or qemu:///session (user)
+#
+# Which Libvirt endpoint to use.
+#
 LIBVIRT_URI='qemu:///system'
 
-# A unused Libvirt network for the cluster
+#
+# A free network subnet in Libvirt. A new network will be created for the cluster, and 
+# it cannot override an existing one. Check your system to select a free subnet prefix.
+#
 LIBVIRT_NETWORK_PREFIX='192.168.99'
 
-# The path for the storage. SSD disks recommended!!!
+#
+# The path for the storage. It must have enough storage for all the nodes,
+# including temporarly the bootstrap node.
+#
 LIBVIRT_STORAGE_POOL_BASE='/ssd-data'
 
-# What OS will the bastion be? Choose one!
-BASTION_INSTALL_TYPE='redhat'
-#BASTION_INSTALL_TYPE='centos'
-#BASTION_INSTALL_TYPE='fedora'
-
-# Where is the ISO file to create the bastion system?
-# Choose one according to BASTION_INSTALL_TYPE!
-BASTION_INSTALL_ISO='/var/lib/libvirt/images/rhel-8.5-x86_64-boot.iso'
-#BASTION_INSTALL_ISO='/var/lib/libvirt/images/CentOS-Stream-8-x86_64-20220223-dvd1.iso'
-#BASTION_INSTALL_ISO='/var/lib/libvirt/images/Fedora-Server-dvd-x86_64-34-1.2.iso'
-
-# The bastion system will be the cluster authorative nameserver
-# To which nameserver should the bastion forward external queries?
-# If more than one, separate with ';'
-DNS_FORWARDERS='192.168.1.254'
-
 
 #
-# Red Hat OpenShift Container Platform
+# OpenShift
 #
 
-# Will this be a disconnected installation.
-# If true, a mirror registry will be created.
-# If false, NOT YET IMPLEMENTED!!!
-DISCONNECTED=true
-
-ARCH='x86_64'
-CLUSTER_VERSION='4.9.10'
+#
+# The name and domain of the cluster. All FQDN hosts will be named as:
+# <hostname>.<CLUSTER_NAME>.<CLUSTER_DOMAIN>
+# The domain does not need to be resolvable outside of the hypervisor host.
+#
+CLUSTER_NAME='ocp'
 CLUSTER_DOMAIN='example.com'
-CLUSTER_NAME='ocp4'
 
-# Download URL for the Red Hat Core OS images
-# NOTE: MUST match CLUSTER_VERSION above!!!
-OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.9/latest'
+#
+# The version and architecture to be installed.
+# The architecture must be supported by the hypervisor.
+# DISCLAIMER: Only x86_64 was tested. If you had success with a different one, please share the feedback.
+#
+CLUSTER_VERSION='4.10.3'
+ARCH='x86_64'
 
-# PATH to the pull secret
+#
+# The pull-secret with the credentials to access Red Hat and Quay images repositories. 
 # Get it from https://console.redhat.com/openshift/downloads
+#
 PULL_SECRET="$(pwd)/pull-secret.txt"
 
-# Just an email for the config files.
+#
+# Just an email to be used in the registry mirror configuration.
+#
 PULL_SECRET_EMAIL='me@example.com'
 
+
 #
-# Nodes specifications
+# OpenShift options
 #
 
-# Bastion
+#
+# Is this a disconnected installation? If true, then a registry mirror will be installed.
+# Note: At the moment, the mirror is always installed. The cluster will use it, even if the Internet is acessible.
+#
+DISCONNECTED=true
+
+#
+# Should the NFS Server be installed to provide storage for the cluster internal registry?
+# This is a post-install options, and instructions will be in the bastion docs directory.
+#
+REGISTRY_NFS=true
+
+
+#
+# OpenShift Node Specs
+#
+
+# Bastion specs
 BASTION_DISK_SIZE=100
 BASTION_CPUS=1
 BASTION_MEMORY_SIZE=2048
 
-# Bootstrap
+# Bootstrap specs
 BOOTSTRAP_DISK_SIZE=50
 BOOTSTRAP_CPUS=4
 BOOTSTRAP_MEMORY_SIZE=8192
 
-# Masters
+# Masters specs
 MASTER_DISK_SIZE=50
 MASTER_CPUS=4
 MASTER_MEMORY_SIZE=8192
 
-# Workers
+# Workers specs
 WORKER_DISK_SIZE=50
 WORKER_CPUS=2
 WORKER_MEMORY_SIZE=6144
 
+
 #
-# Install NFS for registry
+# CRITICAL Parameter: The location of the RHCOS PXE boot files. Please, make sure that this path points to the
+# location of the files rhcos-live-kernel-x86_64, rhcos-live-initramfs.x86_64.img, and rhcos-live-rootfs.x86_64.img
+# that match the CLUSTER_VERSION choosen above.
+#
+#OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.9/latest'
+OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.10/4.10.3/'
+
+
+#
+# The bastion host can be installed with one of the following types.
+# Fedora Server 35, CentOS 8, and RHEL 8.5 were tested.
+# You must download the prefered ISO file and save it in a localion that the 'qemu' can access. For example, /var/lib/libvirt/images/ .
+# Please, choose one pair of type and install ISO file:
 #
 
-REGISTRY_NFS=true
+# For a RHEL bastion host.
+BASTION_INSTALL_TYPE='redhat'
+BASTION_INSTALL_ISO='/var/lib/libvirt/images/rhel-8.5-x86_64-boot.iso'
+
+# For a CentOS bastion host.
+#BASTION_INSTALL_TYPE='centos'
+#BASTION_INSTALL_ISO='/var/lib/libvirt/images/CentOS-Stream-8-x86_64-20220223-dvd1.iso'
+
+# For a Fedora Server bastion host.
+#BASTION_INSTALL_TYPE='fedora'
+#BASTION_INSTALL_ISO='/var/lib/libvirt/images/Fedora-Server-dvd-x86_64-34-1.2.iso'
+
+
+#
+# The bastion host will act as a authoritative nameserver for CLUSTER_DOMAIN. However, for external names, like registry.redhat.com, 
+# the DNS server must forward the request to another nameserver. If you are at home, your router is a good candidate. If unsure, the
+# Google nameservers are good options (8.8.8.8; 8.8.4.4), or the opendns.org (208.67.222.222 ; 208.67.220.220).
+# If specifying more than one, please separate them with ';'
+#
+DNS_FORWARDERS='192.168.1.254'
