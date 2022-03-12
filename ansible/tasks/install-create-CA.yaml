@@ -1,0 +1,43 @@
+---
+
+# Create CA
+# https://gist.github.com/fntlnz/cf14feb5a46b2eda428e000157447309
+# https://janikvonrotz.ch/2019/01/21/create-a-certificate-authority-ca-and-sign-server-certificates-without-prompting-using-openssl/
+
+- name: Checking the existence of the CA cert
+  ansible.builtin.stat:
+    path: /root/CA/CA_cert.pem
+  register: CA
+
+- block:
+
+  - name: Create a directory for the CA
+    ansible.builtin.file:
+      path: /root/CA
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
+
+  # A more key uses 4096 bits.
+  - name: Create the CA key
+    ansible.builtin.shell:
+      cmd: openssl genrsa -out ./CA_key.pem 2048
+      chdir: /root/CA
+
+  # Adjust cert parameters to your liking.
+  - name: Create the CA cert
+    ansible.builtin.shell:
+      cmd: openssl req -x509 -new -nodes -key ./CA_key.pem -sha256 -days 3650 -out ./CA_cert.pem -subj "/C=UK/ST=London/L=London/O=Red Hat CEE/CN=ShiftCA"
+      chdir: /root/CA
+
+  - name: Installing the CA in Bastion system 
+    ansible.builtin.copy:
+      src: /root/CA/CA_cert.pem
+      dest: /etc/pki/ca-trust/source/anchors/
+      remote_src: yes
+
+  - name: Running update-ca-trust
+    ansible.builtin.shell: update-ca-trust extract
+
+  when: not CA.stat.exists

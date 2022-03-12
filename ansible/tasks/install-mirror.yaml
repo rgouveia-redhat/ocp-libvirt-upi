@@ -1,0 +1,155 @@
+---
+
+# Configure registry
+# https://access.redhat.com/articles/5489341
+# https://docs.openshift.com/container-platform/4.9/installing/installing-mirroring-installation-images.html
+
+- name: Create registry directories
+  ansible.builtin.file:
+    path: "/opt/registry/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  with_items:
+    - auth
+    - certs
+    - data
+    - conf
+
+
+# If available, sync local mirror data before starting registry
+
+
+# Create bastion cert
+- name: Checking the existence of the bastion cert
+  ansible.builtin.stat:
+    path: /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.pem
+  register: cert
+
+- block:
+
+  - name: Generating bastion cert key
+    ansible.builtin.shell:
+      cmd: openssl genrsa -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.key 2048
+
+  - name: Generating bastion cert request
+    ansible.builtin.shell:
+      cmd: openssl req -new -key /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.key -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.csr -subj "/CN=bastion.{{ cluster_name }}.{{ cluster_domain }}"
+
+  - name: Creating OpenSSL X509v3 extensions file for bastion
+    ansible.builtin.template:
+      src: files/registry/openssl-X509v3-extensions.j2
+      dest: /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.cnf
+      owner: root
+      group: root
+      mode: '0644'
+      backup: no
+
+  - name: Signing bastion certificate
+    ansible.builtin.shell:
+      cmd: openssl x509 -req -in /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.csr -CA /root/CA/CA_cert.pem -CAkey /root/CA/CA_key.pem -CAcreateserial -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.pem -days 825 -sha256 -extfile /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.cnf
+
+  when: not cert.stat.exists
+
+
+- name: Checking the existence of the registry auth
+  ansible.builtin.stat:
+    path: /opt/registry/auth/htpasswd
+  register: auth
+
+# Auth. Username: admin, Password: redhat
+- name: Creating registry authentication file
+  ansible.builtin.shell:
+    cmd: htpasswd -bBc /opt/registry/auth/htpasswd admin redhat ; echo redhat > /opt/registry/auth/admin-password.txt
+  when: not auth.stat.exists
+
+- name: Creating registry configuration file
+  ansible.builtin.template:
+    src: files/registry/registry-config.yml.j2
+    dest: /opt/registry/conf/config.yml
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+- name: Permit traffic in port 5000/tcp
+  ansible.posix.firewalld:
+    port: "5000/tcp"
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: Creating registry Systemd configuration file
+  ansible.builtin.template:
+    src: files/registry/podman-registry.service.j2
+    dest: /etc/systemd/system/podman-registry.service
+    owner: root
+    group: root
+    mode: '0644'
+    backup: no
+
+- name: restart and enable podman-registry.service
+  ansible.builtin.systemd:
+    name: podman-registry.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Wait for port 5000 to become open on the host
+  ansible.builtin.wait_for:
+    port: 5000
+    delay: 5
+
+- name: Test registry
+  ansible.builtin.uri:
+    url: https://bastion.{{ cluster_name }}.{{ cluster_domain }}:5000/v2/_catalog
+    url_username: admin
+    url_password: redhat
+    return_content: yes
+  register: registry
+
+- name: status=200 and json payload of "{"repositories":[]}" is good!
+  debug:
+    var: registry
+
+# Create a pull-secret for the registry:
+# https://docs.openshift.com/container-platform/4.9/installing/installing-mirroring-installation-images.html#installation-adding-registry-pull-secret_installing-mirroring-installation-images
+
+- name: Create a directory for the registry files
+  ansible.builtin.file:
+    path: /root/registry
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create script to create the registry pull secret
+  ansible.builtin.template:
+    src: files/registry/create-registry-pull-secret.sh.j2
+    dest: /root/registry/create-registry-pull-secret.sh
+    owner: root
+    group: root
+    mode: '0755'
+    backup: no
+
+- name: Run script to create the registry pull secret
+  ansible.builtin.command:
+    cmd: /root/registry/create-registry-pull-secret.sh
+  args:
+    creates: /root/registry/pull-secret.json
+
+- name: Create the mirror registry script
+  ansible.builtin.template:
+    src: files/registry/mirror-registry.sh.j2
+    dest: /root/registry/mirror-registry.sh
+    owner: root
+    group: root
+    mode: '0755'
+    backup: no
+
+- name: Execute the mirror registry script. GO TAKE A COFFEE!!!
+  ansible.builtin.shell:
+    cmd: PATH=$PATH:/root/bin /root/registry/mirror-registry.sh
+  args:
+    executable: /bin/bash

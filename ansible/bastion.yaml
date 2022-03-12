@@ -8,6 +8,8 @@
 
   tasks:
 
+    ### bastion host tasks
+
     - name: Configure bastion host
       ansible.builtin.import_tasks: tasks/bastion-host.yaml
       tags:
@@ -53,4 +55,36 @@
       ansible.builtin.import_tasks: tasks/bastion-registry-nfs.yaml
       when: registry_nfs == true
       tags:
-        - debug
+        - registry-nfs
+
+    ### Install tasks
+
+    - name: Installation preparation tasks
+      ansible.builtin.import_tasks: tasks/install-prepare.yaml
+      tags:
+        - inst-prepare
+
+    - name: Install PXE RHCOS boot files
+      ansible.builtin.import_tasks: tasks/install-pxe-rhcos-files.yaml
+      tags:
+        - inst-pxe-rhcos
+
+    - name: Install OCP client tools
+      ansible.builtin.import_tasks: tasks/install-client-tools.yaml
+      tags:
+        - inst-cli-tools
+
+    - name: Create CA cert
+      ansible.builtin.import_tasks: tasks/install-create-CA.yaml
+      tags:
+        - inst-CA
+
+    - name: Create registry mirror
+      ansible.builtin.import_tasks: tasks/install-mirror.yaml
+      tags:
+        - inst-mirror
+
+    - name: Assemble install-config.yaml
+      ansible.builtin.import_tasks: tasks/install-config.yaml
+      tags:
+        - inst-config

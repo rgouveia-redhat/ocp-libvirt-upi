@@ -1,0 +1,29 @@
+---
+
+- name: Install needed packages
+  ansible.builtin.package:
+    name:
+      - openssl
+      - httpd-tools
+      - podman
+      - skopeo
+    state: present
+
+- name: Copy SSH key to bastion
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /root/.ssh/
+    owner: root
+    group: root
+    mode: '0400'
+  with_items:
+    - ../ssh/id_rsa
+    - ../ssh/id_rsa.pub
+
+- name: Copy pull-secret to bastion
+  ansible.builtin.copy:
+    src: "{{ pull_secret }}"
+    dest: /root/
+    owner: root
+    group: root
+    mode: '0640'
