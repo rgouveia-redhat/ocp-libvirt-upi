@@ -87,7 +87,9 @@ cluster_destroy () {
 
     echo "Removing related files..."
     rm -rf ssh/
+    sudo rmdir ${LIBVIRT_STORAGE_POOL_BASE}/${CLUSTER_NAME}
 
     echo
     echo "Cluster removed!!!"
 }
+
