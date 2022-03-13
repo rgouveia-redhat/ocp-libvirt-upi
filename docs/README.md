@@ -17,7 +17,7 @@ Although, using Libvirt, which is an unsupported platform, an important requirem
 
 > Disclaimer: This tool is not endorsed nor supported by Red Hat, and it's also not created for production use. 
 
-Looking at the available options from the official [openshift-install Github page](https://github.com/openshift/installer) my analysis is as follows:
+Looking at the available options from the official [openshift-install GitHub page](https://github.com/openshift/installer) my analysis is as follows:
 
 ## Supported Installer-provisioned infrastructure (IPI)
 
@@ -74,10 +74,10 @@ This first release will prepare the infrastructure for an installation of OpenSh
 - A Red Hat based system for the hypervisor.
   - Fedora Desktop 35 is tested, but should work with CentOS 8 and Red Hat 8.x variants.
 - Libvirt installed and enabled.
-- sudo privileges on the hypervisor host for your convenience.
+- 'sudo' privileges on the hypervisor host for your convenience.
 - ISO file for the bastion installation.
   - Tested with Fedora Server 35, CentOS 8, and Red Hat 8.5.
-- pull secret for the cluster installation.
+- Pull secret for the cluster installation.
 
 > Disclaimer: 100% of tests executed with SSD disks.
 
