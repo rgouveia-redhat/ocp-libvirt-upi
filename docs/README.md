@@ -3,13 +3,19 @@
 
 > **In a nutshell, this project automates as much as possible the deployment of Red Hat OpenShift Containers Platform using the method UPI for Bare Metal on top of Libvirt/KVM.**
 
-Just to put this in perspective. You set some desired settings in a file, execute a command, and press Enter once per each node of the cluster to be.
+Just to put this in perspective:
 
-This project, as many open source projects, started as an itch that I had to scratch.
+- You set some desired settings in a file,
+- Execute a command, and 
+- Press Enter once per each node of the cluster to be installed.
+
+This project, as many open source projects, started as an itch that I had to scratch. IPI installations were not feasible, and UPI installation are just too much work.
 
 Due to my $dayjob, I frequently need to quickly access a cluster with a specific version to test something for a customer. I have a local Fedora box which main purpose is to be my gaming machine, and I don't want to re-install it with another platform, like oVirt/Red Hat Virtualization. In addition, my gaming box does not support nested virtualization, so these options are not possible for me at the moment. However, I have a 2 TB SSD disk, 16 vCPU cores, and 64 GB of memory that I want to put to good use.
 
 Although, using Libvirt, which is an unsupported platform, an important requirement for me is that the installation is as close as possible to a supported OpenShift installation.
+
+> Disclaimer: This tool is not endorsed nor supported by Red Hat, and it's also not created for production use. 
 
 Looking at the available options from the official [openshift-install Github page](https://github.com/openshift/installer) my analysis is as follows:
 
@@ -155,7 +161,7 @@ Hopefully, in a few minutes after that you will have a functional OpenShift clus
 
 # FAQ
 
-## Why didn't you used `tool x` instead ?
+## Why didn't you use `tool x` instead ?
 
 This was mostly a learning experience for me. However, I did use the inspiration of many other tools to create this one.
 
