@@ -102,7 +102,7 @@ WORKER_MEMORY_SIZE=6144
 # that match the CLUSTER_VERSION choosen above.
 #
 #OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.9/latest'
-OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.10/4.10.3/'
+OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.10/4.10.3'
 
 
 #
