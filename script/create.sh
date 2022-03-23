@@ -130,9 +130,11 @@ libvirt_create_network () {
     if [ "$tmp" != "" ] ; then
         echo "$(date +%T) INFO: Network already exists."
     else
-        if [ $DISCONNECTED ] ; then
+        if [ "$DISCONNECTED" = true ] ; then
+	    echo "$(date +%T) INFO: Creating isolated network..."
             xml=$(eval "echo \"$(cat files/virt-network-isolated.xml)\"")
         else
+            echo "$(date +%T) INFO: Creating connected network..."
             xml=$(eval "echo \"$(cat files/virt-network-nat.xml)\"")
         fi
         echo $xml > /tmp/network-tmp.xml

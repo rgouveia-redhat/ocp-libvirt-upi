@@ -1,8 +1,8 @@
 <network>
   <name>$CLUSTER_NAME</name>
-  <forward mode="nat">
+  <forward mode=\"nat\">
     <nat>
-      <port start="1024" end="65535"/>
+      <port start=\"1024\" end=\"65535\"/>
     </nat>
   </forward>
   <domain name=\"$CLUSTER_DOMAIN\"/>
