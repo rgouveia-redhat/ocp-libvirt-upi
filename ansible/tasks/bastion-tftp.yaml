@@ -91,11 +91,14 @@
     - "{{ mac_worker2 }}"
     - "{{ mac_worker3 }}"
 
-- name: restart and enable tftp.service
+- name: restart and enable tftp service
   ansible.builtin.systemd:
-    name: tftp.service
+    name: "{{ item }}"
     state: started
     enabled: yes
+  with_items:
+    - tftp.service
+    - tftp.socket
 
 - name: Configure Firewalld
   firewalld:
