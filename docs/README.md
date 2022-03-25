@@ -22,7 +22,6 @@ I am just going to say it! This is not an original idea! There are other impleme
 | [Automated OpenShift 4 Cluster Installation on KVM](https://github.com/kxr/ocp4_setup_upi_kvm) | Really cool project, made entirely in Bash. It has a command that accepts parameters, and fully automates the deployment from zero to 100%. |
 | [Automate your cluster provisioning from 0 to OCP!](https://github.com/kubealex/libvirt-ocp4-provisioner) | Does the job, but has a lot of playbooks, and you have to touch a lot of configuration files. |
 | [ocp4-upi-baremetal-lab](https://github.com/samuelvl/ocp4-upi-baremetal-lab) | "Deploy an OpenShift 4 cluster using UPI method (User Provisioned Infrastructure) in a disconnected scenario without a cloud provider to simulate a real baremetal environment. The cluster is deployed on top of libvirt/kvm using Terraform and every step of the installation and configuration is automated to be able to destroy and deploy a new cluster in less than 30 minutes." |
-|
 
 **But, if you want a tool that:**
 
@@ -53,7 +52,6 @@ Looking at the available options from the official [openshift-install GitHub pag
 | Clouds: AWS, Azure, GCP | Cost |
 | Metal, OpenStack, Power, RHV/oVirt, vSphere, z/VM | Hardware requirements not available |
 | Libvirt with KVM | Development only |
-|
 
 With the IPI method, the openshift-install binary connects to the configured provider, and creates the required infrastructure for the installation. The Libvirt option looks really nice, however, I had bad experiences trying to install older versions, and it's, obviously, not supported.
 
@@ -64,7 +62,6 @@ With the IPI method, the openshift-install binary connects to the configured pro
 | Clouds: AWS, GCP | Cost |
 | OpenStack, RHV/oVirt, vSphere | Hardware requirements not available |
 | Metal | Maybe |
-|
 
 With the UPI method, the user is responsible for creating the required infrastructure: hosts, DNS, DHCP, etc. This is doable with Libvirt, but it's a lot of manual work, and it takes a lot of time for each single deployment. So, I created this project to assist me with the process.
 
