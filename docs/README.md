@@ -1,21 +1,48 @@
 
 # ocp-libvirt-upi
 
-> **In a nutshell, this project automates as much as possible the deployment of Red Hat OpenShift Containers Platform using the method UPI for Bare Metal on top of Libvirt/KVM.**
+> **In a nutshell, this project automates as much as possible the deployment of Red Hat OpenShift Container Platform using the method UPI for Bare Metal on top of Libvirt/KVM.**
 
-Just to put this in perspective:
+Just to put the simplicity in perspective:
 
-- You set some desired settings in a file,
-- Execute a command, and 
-- Press Enter once per each node of the cluster to be installed.
+1. You set some desired settings in a file,
+2. You execute a command, and 
+3. Press Enter once per each node of the cluster to be installed.
+
+**See how easy it is in 10 minutes:**
+
+[![Watch the demo](https://i.ytimg.com/an_webp/FJrSF-eL0sY/mqdefault_6s.webp?du=3000&sqp=CIaA9JEG&rs=AOn4CLDi6K4Jdk6s1dzILZPigi7ikm_4Mw)](https://youtu.be/FJrSF-eL0sY)
+
+# Prior-art
+
+I am just going to say it! This is not an original idea! There are other implementations out there. Just here on GitHub I found the following projects that I liked:
+
+| Project | Comments |
+| --- | --- |
+| [Automated OpenShift 4 Cluster Installation on KVM](https://github.com/kxr/ocp4_setup_upi_kvm) | Really cool project, made entirely in Bash. It has a command that accepts parameters, and fully automates the deployment from zero to 100%. |
+| [Automate your cluster provisioning from 0 to OCP!](https://github.com/kubealex/libvirt-ocp4-provisioner) | Does the job, but has a lot of playbooks, and you have to touch a lot of configuration files. |
+| [ocp4-upi-baremetal-lab](https://github.com/samuelvl/ocp4-upi-baremetal-lab) | "Deploy an OpenShift 4 cluster using UPI method (User Provisioned Infrastructure) in a disconnected scenario without a cloud provider to simulate a real baremetal environment. The cluster is deployed on top of libvirt/kvm using Terraform and every step of the installation and configuration is automated to be able to destroy and deploy a new cluster in less than 30 minutes." |
+|
+
+**But, if you want a tool that:**
+
+- Allows you to install several versions in the same host without overlapping (depending on disk).
+- Uses the same services that you would find in a production environment.
+- Follows the same installation method a production environment would use (no hacks).
+- Hides de complexity, and provides tools to make your life easier (create, stop, start, destroy cluster).
+- Follows Red Hat best practices, and links the sources.
+
+**Then, this project is for you.**
+
+# Motivation
 
 This project, as many open source projects, started as an itch that I had to scratch. IPI installations were not feasible, and UPI installation are just too much work.
 
 Due to my $dayjob, I frequently need to quickly access a cluster with a specific version to test something for a customer. I have a local Fedora box which main purpose is to be my gaming machine, and I don't want to re-install it with another platform, like oVirt/Red Hat Virtualization. In addition, my gaming box does not support nested virtualization, so these options are not possible for me at the moment. However, I have a 2 TB SSD disk, 16 vCPU cores, and 64 GB of memory that I want to put to good use.
 
-Although, using Libvirt, which is an unsupported platform, an important requirement for me is that the installation is as close as possible to a supported OpenShift installation.
+Although, using Libvirt, which is an unsupported platform, an important requirement for me is that the installation is as close as possible to a supported OpenShift installation done in real metal.
 
-> Disclaimer: This tool is not endorsed nor supported by Red Hat, and it's also not created for production use. 
+> Disclaimer: This tool is not endorsed nor supported by Red Hat, and it's also not created for production use.
 
 Looking at the available options from the official [openshift-install GitHub page](https://github.com/openshift/installer) my analysis is as follows:
 
@@ -26,6 +53,7 @@ Looking at the available options from the official [openshift-install GitHub pag
 | Clouds: AWS, Azure, GCP | Cost |
 | Metal, OpenStack, Power, RHV/oVirt, vSphere, z/VM | Hardware requirements not available |
 | Libvirt with KVM | Development only |
+|
 
 With the IPI method, the openshift-install binary connects to the configured provider, and creates the required infrastructure for the installation. The Libvirt option looks really nice, however, I had bad experiences trying to install older versions, and it's, obviously, not supported.
 
@@ -36,16 +64,20 @@ With the IPI method, the openshift-install binary connects to the configured pro
 | Clouds: AWS, GCP | Cost |
 | OpenStack, RHV/oVirt, vSphere | Hardware requirements not available |
 | Metal | Maybe |
+|
 
-With the UPI method, the user is responsible for creating the required infrastructure: hosts, DNS, DHCP, etc.
-
-This is doable with Libvirt, but it's a lot of manual work, and it takes a lot of time for each single deployment. So, I created this project to assist me with the process.
+With the UPI method, the user is responsible for creating the required infrastructure: hosts, DNS, DHCP, etc. This is doable with Libvirt, but it's a lot of manual work, and it takes a lot of time for each single deployment. So, I created this project to assist me with the process.
 
 ## What does it do so far?
 
-This first release will prepare the infrastructure for an installation of OpenShift 4, with your chosen version. You can choose a disconnected installation, but the mirror lacks operator for now. Soon... 
+This first release will prepare the infrastructure (bastion vm) for an installation of OpenShift 4, with your chosen version. It deploys 3 masters and 3 workers. You can choose a disconnected installation, but the mirror still lacks the operators. It's planned.
 
-> Disclaimer: Tested only with some 4.9.x versions.
+**Note:** The single master cluster is a work in progress.
+
+### Tested versions
+
+- Some 4.9.x
+- 4.10.3
 
 ## What is automated?
 
@@ -65,7 +97,7 @@ This first release will prepare the infrastructure for an installation of OpenSh
   - Red Hat Core OS PXE boot files
   - OpenShift clients: openshift-install, oc, opm
   - Secure registry mirror
-  - Populate the registry mirror
+  - Populate the mirror registry with the chosen OCP release
   - Assemble the install-config.yaml
   - Add the ignition files to the HTTP Server
 
@@ -76,7 +108,7 @@ This first release will prepare the infrastructure for an installation of OpenSh
 - Libvirt installed and enabled.
 - 'sudo' privileges on the hypervisor host for your convenience.
 - ISO file for the bastion installation.
-  - Tested with Fedora Server 35, CentOS 8, and Red Hat 8.5.
+  - Tested with Fedora Server 34, CentOS 8, and Red Hat 8.5.
 - Pull secret for the cluster installation.
 
 > Disclaimer: 100% of tests executed with SSD disks.
@@ -89,15 +121,14 @@ This first release will prepare the infrastructure for an installation of OpenSh
 $ git clone https://github.com/rgouveia-redhat/ocp-libvirt-upi.git <folder_name>
 ```
 
-2. Create a configuration file:
+2. Create the configuration file, and Edit the "Settings" file with the desired options (more help on the file):
 
 ```
 $ cp Settings-example Settings
+$ vim Settings
 ```
 
-3. Edit the "Settings" file with the desired options (more help on the file):
-
-4. Execute:
+3. Execute:
 
 ```
 $ ./engage create
