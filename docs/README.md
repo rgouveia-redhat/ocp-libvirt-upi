@@ -11,7 +11,7 @@ Just to put the simplicity in perspective:
 
 **See how easy it is in 10 minutes:**
 
-[![Watch the demo](https://i.ytimg.com/an_webp/FJrSF-eL0sY/mqdefault_6s.webp?du=3000&sqp=CIaA9JEG&rs=AOn4CLDi6K4Jdk6s1dzILZPigi7ikm_4Mw)](https://youtu.be/FJrSF-eL0sY)
+[![How to install OpenShift cluster | OCP Libvirt UPI - release 1.x](https://i9.ytimg.com/vi/FJrSF-eL0sY/mq2.jpg?sqp=COT9-JEG&rs=AOn4CLDHOEmpIiI0iyXvFd-KMVVw287_Ew)](https://youtu.be/FJrSF-eL0sY)
 
 # Prior-art
 
@@ -116,6 +116,7 @@ This first release will prepare the infrastructure (bastion vm) for an installat
 
 ```
 $ git clone https://github.com/rgouveia-redhat/ocp-libvirt-upi.git <folder_name>
+$ cd <folder_name>
 ```
 
 2. Create the configuration file, and Edit the "Settings" file with the desired options (more help on the file):
