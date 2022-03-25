@@ -28,7 +28,7 @@ I am just going to say it! This is not an original idea! There are other impleme
 - Allows you to install several versions in the same host without overlapping (depending on disk).
 - Uses the same services that you would find in a production environment.
 - Follows the same installation method a production environment would use (no hacks).
-- Hides de complexity, and provides tools to make your life easier (create, stop, start, destroy cluster).
+- Hides the complexity, and provides tools to make your life easier (create, stop, start, destroy cluster).
 - Follows Red Hat best practices, and links the sources.
 
 **Then, this project is for you.**
