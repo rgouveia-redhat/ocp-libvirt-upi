@@ -39,7 +39,7 @@ CLUSTER_DOMAIN='example.com'
 # The architecture must be supported by the hypervisor.
 # DISCLAIMER: Only x86_64 was tested. If you had success with a different one, please share the feedback.
 #
-CLUSTER_VERSION='4.10.3'
+CLUSTER_VERSION='4.11.3'
 ARCH='x86_64'
 
 #
@@ -102,8 +102,8 @@ WORKER_MEMORY_SIZE=6144
 # that match the CLUSTER_VERSION choosen above.
 #
 #OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.9/latest'
-OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.10/4.10.3'
-
+#OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.10/4.10.3'
+OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.11/latest'
 
 #
 # The bastion host can be installed with one of the following types.
