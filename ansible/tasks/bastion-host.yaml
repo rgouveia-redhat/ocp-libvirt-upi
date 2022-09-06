@@ -59,6 +59,7 @@
       - syslinux
       - httpd
       - chrony
+      - jq
     state: present
 
 # We only want the bastion nameserver as active.
