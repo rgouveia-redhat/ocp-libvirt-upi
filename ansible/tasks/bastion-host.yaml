@@ -60,6 +60,7 @@
       - httpd
       - chrony
       - jq
+      - git
     state: present
 
 # We only want the bastion nameserver as active.
