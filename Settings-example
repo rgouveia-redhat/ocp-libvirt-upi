@@ -62,13 +62,13 @@ PULL_SECRET_EMAIL='me@example.com'
 # Is this a disconnected installation? If true, then a registry mirror will be installed.
 # Note: At the moment, the mirror is always installed. The cluster will use it, even if the Internet is acessible.
 #
-DISCONNECTED=true
+DISCONNECTED=false
 
 #
 # Should the NFS Server be installed to provide storage for the cluster internal registry?
 # This is a post-install options, and instructions will be in the bastion docs directory.
 #
-REGISTRY_NFS=true
+REGISTRY_NFS=false
 
 
 #
@@ -83,17 +83,17 @@ BASTION_MEMORY_SIZE=2048
 # Bootstrap specs
 BOOTSTRAP_DISK_SIZE=50
 BOOTSTRAP_CPUS=4
-BOOTSTRAP_MEMORY_SIZE=8192
+BOOTSTRAP_MEMORY_SIZE=16384
 
 # Masters specs
 MASTER_DISK_SIZE=50
 MASTER_CPUS=4
-MASTER_MEMORY_SIZE=8192
+MASTER_MEMORY_SIZE=12288
 
 # Workers specs
 WORKER_DISK_SIZE=50
 WORKER_CPUS=2
-WORKER_MEMORY_SIZE=6144
+WORKER_MEMORY_SIZE=12288
 
 
 #
@@ -101,9 +101,9 @@ WORKER_MEMORY_SIZE=6144
 # location of the files rhcos-live-kernel-x86_64, rhcos-live-initramfs.x86_64.img, and rhcos-live-rootfs.x86_64.img
 # that match the CLUSTER_VERSION choosen above.
 #
-#OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.9/latest'
 #OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.10/4.10.3'
 OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.11/latest'
+
 
 #
 # The bastion host can be installed with one of the following types.
@@ -114,11 +114,7 @@ OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/depe
 
 # For a RHEL bastion host.
 BASTION_INSTALL_TYPE='redhat'
-BASTION_INSTALL_ISO='/var/lib/libvirt/images/rhel-8.5-x86_64-boot.iso'
-
-# For a CentOS bastion host.
-#BASTION_INSTALL_TYPE='centos'
-#BASTION_INSTALL_ISO='/var/lib/libvirt/images/CentOS-Stream-8-x86_64-20220223-dvd1.iso'
+BASTION_INSTALL_ISO='/var/lib/libvirt/images/rhel-8.8-x86_64-boot.iso'
 
 # For a Fedora Server bastion host.
 #BASTION_INSTALL_TYPE='fedora'
