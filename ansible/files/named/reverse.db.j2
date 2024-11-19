@@ -10,7 +10,7 @@ $TTL	30 ; ONLY THIS SHORT FOR TESTING, changes are cached this long
 
 ; server host definitions
 
-$ORIGIN 100.168.192.IN-ADDR.ARPA.
+$ORIGIN {{ network_reverse }}.IN-ADDR.ARPA.
 
 3     IN    PTR    bastion.{{ cluster_name }}.{{ cluster_domain }}.
 3     IN    PTR    api.{{ cluster_name }}.{{ cluster_domain }}.
