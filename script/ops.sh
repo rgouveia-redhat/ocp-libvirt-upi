@@ -43,7 +43,7 @@ show_help_install () {
 - To define host variables to open the web console, execute:
   ./engage env
 
-- To SSH in to the bastion host, execute:
+- To SSH in to the bastion host, execute one of:
   ssh -i ssh/id_rsa root@bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
 
 ### In the bastion host: ###

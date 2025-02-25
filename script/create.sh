@@ -17,7 +17,6 @@ LIBVIRT_STORAGE_POOL_BASE=$LIBVIRT_STORAGE_POOL_BASE
 
 BASTION_INSTALL_TYPE=$BASTION_INSTALL_TYPE
 BASTION_INSTALL_ISO=$BASTION_INSTALL_ISO
-DNS_FORWARDERS=$DNS_FORWARDERS
 
 DISCONNECTED=$DISCONNECTED
 REGISTRY_NFS=$REGISTRY_NFS
@@ -60,8 +59,8 @@ check_requisites () {
 
     ### Verify libvirt is enabled
     if [ $(sudo systemctl is-enabled libvirtd.service) != 'enabled' ] ; then
-        echo "$(date +%T) Error: Libvirt is not enabled."
-        exit -1
+        echo "$(date +%T) Error: Libvirt is not enabled. Fixing!"
+        sudo systemctl enable --now libvirtd.service
     else
         echo "$(date +%T) INFO: Libvirt installed and enabled."
     fi
@@ -120,13 +119,13 @@ check_requisites () {
 libvirt_prepare () {
 
     ### Connect to system instance of libvirt.
-    sudo virsh connect qemu:///system
+    sudo virsh connect $LIBVIRT_URI
 }
 
 libvirt_create_network () {
 
     ### Create network for cluster.
-    tmp=$(sudo virsh net-list --all --name | egrep "^${CLUSTER_NAME}\s*$")
+    tmp=$(sudo virsh net-list --all --name | grep -E "^${CLUSTER_NAME}\s*$")
     if [ "$tmp" != "" ] ; then
         echo "$(date +%T) INFO: Network already exists."
     else
@@ -172,16 +171,12 @@ libvirt_create_bastion () {
     if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-bastion)" != "" ] ; then
         echo "$(date +%T) INFO: Bastion VM already exists."
     else
-        # Variant. Check with 'osinfo-query os'.
-        variant='centos8'
-        ks='files/centos.ks.tpl'
-        if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
-            variant='rhel8.5'
+
+        if [ "$BASTION_TYPE" == "redhat" ]; then
             ks='files/redhat.ks.tpl'
-        fi
-        if [ "$BASTION_INSTALL_TYPE" == "fedora" ]; then
-            variant='fedora35'
-            ks='files/fedora.ks.tpl'
+        else
+            echo "$(date +%T) ERROR: Bastion VM supports only Red Hat for now."
+            exit -2
         fi
 
         # Generate kickstart file.
@@ -213,14 +208,9 @@ libvirt_create_bastion () {
 
         rm files/anaconda.ks
 
-        if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
-            echo "
-$(date +%T) [ACTION REQUIRED] Open a console to the bastion vm and 
-                              complete the Red Hat Network authentication!
-                              Close the virt-viewer window when done."
-
-            sudo virt-viewer ${CLUSTER_NAME}-bastion
-        fi
+        echo "$(date +%T) [ACTION MAY BE REQUIRED] Open a console to the bastion VM and 
+                              check if all steps successful. 
+                              For example, the Red Hat Network authentication."
 
         echo "$(date +%T) INFO: VMs will power off after installation. Waiting for it..."
 
@@ -243,8 +233,9 @@ libvirt_create_bootstrap () {
     if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-bootstrap)" != "" ]; then
         echo "$(date +%T) INFO: Bootstrap VM already exists."
     else
-        # Variant. Check with 'osinfo-query os'.
-        variant='rhel8.5'
+        get_storage_for bootstrap
+        disk="${LIBVIRT_STORAGE_POOL[${STORAGE_POOL_INDEX}]}/$CLUSTER_NAME/${CLUSTER_NAME}-bootstrap.qcow2"
+        echo "$(date +%T) INFO: Using disk: $disk"
 
         # Create vm in cluster network.
         sudo nice -n 19 virt-install --name ${CLUSTER_NAME}-bootstrap \
@@ -254,7 +245,7 @@ libvirt_create_bootstrap () {
             --disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-bootstrap.qcow2,size=$BOOTSTRAP_DISK_SIZE \
             --pxe \
             --boot network,hd,menu=off \
-            --os-variant $variant \
+            --os-variant $BASTION_VARIANT \
             --network network=${CLUSTER_NAME},model=virtio \
             --noautoconsole
 
@@ -267,26 +258,29 @@ libvirt_create_masters () {
 
     # Create masters vm.
     for i in {1..3}; do
-        if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-master$i)" != "" ]; then
-            echo "$(date +%T) INFO: Master$i VM already exists."
+        if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-master${i})" != "" ]; then
+            echo "$(date +%T) INFO: Master${i} VM already exists."
         else
-            # Variant. Check with 'osinfo-query os'.
-            variant='rhel8.5'
+
+            get_storage_for master${i}
+            disk="${LIBVIRT_STORAGE_POOL[${STORAGE_POOL_INDEX}]}/$CLUSTER_NAME/${CLUSTER_NAME}-master${i}.qcow2"
+            echo "$(date +%T) INFO: Using disk: $disk"
 
             # Create vm in cluster network.
-            sudo nice -n 19 virt-install --name ${CLUSTER_NAME}-master$i \
-                --cpu host \
+            sudo nice -n 19 virt-install \
+                --name ${CLUSTER_NAME}-master${i} \
+                --cpu host-model \
                 --vcpus $MASTER_CPUS \
                 --memory $MASTER_MEMORY_SIZE \
                 --disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-master$i.qcow2,size=$MASTER_DISK_SIZE \
                 --pxe \
                 --boot network,hd,menu=off \
-                --os-variant $variant \
+                --os-variant $BASTION_VARIANT \
                 --network network=${CLUSTER_NAME},model=virtio \
                 --noautoconsole
 
             # We just need the macs to be generated. For now stop the vm.
-            sudo virsh destroy ${CLUSTER_NAME}-master$i
+            sudo virsh destroy ${CLUSTER_NAME}-master${i}
         fi
     done
 }
@@ -294,27 +288,30 @@ libvirt_create_masters () {
 libvirt_create_workers () {
 
     # Create workers vms.
-    for i in {1..3}; do
-        if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-worker$i)" != "" ]; then
-            echo "$(date +%T) INFO: Worker$i VM already exists."
+    for i in $(seq 1 ${NUMBER_WORKERS}); do
+
+        if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-worker${i})" != "" ]; then
+            echo "$(date +%T) INFO: Worker${i} VM already exists."
         else
-            # Variant. Check with 'osinfo-query os'.
-            variant='rhel8.5'
+            get_storage_for worker${i}
+            disk="${LIBVIRT_STORAGE_POOL[${STORAGE_POOL_INDEX}]}/$CLUSTER_NAME/${CLUSTER_NAME}-worker${i}.qcow2"
+            echo "$(date +%T) INFO: Using disk: $disk"
 
             # Create vm in cluster network.
-            sudo nice -n 19 virt-install --name ${CLUSTER_NAME}-worker$i \
-                --cpu host \
+            sudo nice -n 19 virt-install \
+                --name ${CLUSTER_NAME}-worker${i} \
+                --cpu host-model \
                 --vcpus $WORKER_CPUS \
                 --memory $WORKER_MEMORY_SIZE \
                 --disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-worker$i.qcow2,size=$WORKER_DISK_SIZE \
                 --pxe \
                 --boot network,hd,menu=off \
-                --os-variant $variant \
+                --os-variant $BASTION_VARIANT \
                 --network network=${CLUSTER_NAME},model=virtio \
                 --noautoconsole
 
             # We just need the macs to be generated. For now stop the vm.
-            sudo virsh destroy ${CLUSTER_NAME}-worker$i
+            sudo virsh destroy ${CLUSTER_NAME}-worker${i}
         fi
     done
 }
@@ -326,7 +323,6 @@ create_infra () {
         exit -1
     fi
 
-    show_settings
     check_sudo
     check_requisites
     create_ssh_key
@@ -350,7 +346,7 @@ create_infra () {
     while [ "$bastion_ip" == "" ]; do
         echo -n "."
         sleep $DELAY
-        bastion_ip=$(sudo virsh domifaddr ${CLUSTER_NAME}-bastion | egrep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
+        bastion_ip=$(sudo virsh domifaddr ${CLUSTER_NAME}-bastion | grep -Eo "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
     done
     echo
     echo "$(date +%T) INFO: Bastion IP: $bastion_ip"
@@ -381,27 +377,27 @@ openshift_mirror_base: '$OPENSHIFT_MIRROR_BASE'
 cluster_version: '$CLUSTER_VERSION'
 cluster_name: '$CLUSTER_NAME'
 cluster_domain: '$CLUSTER_DOMAIN'
-dns_forwarders: '$DNS_FORWARDERS'
+number_workers: '$NUMBER_WORKERS'
 pull_secret: '$PULL_SECRET'
 pull_secret_email: '$PULL_SECRET_EMAIL'
 " > ansible/vars/common.yaml
 
     if [ "$(grep mac_bootstrap ansible/vars/common.yaml)" == "" ]; then
-        mac=$(sudo virsh domiflist ${CLUSTER_NAME}-bootstrap | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
+        mac=$(sudo virsh domiflist ${CLUSTER_NAME}-bootstrap | grep $CLUSTER_NAME | grep -Eo '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
         echo "mac_bootstrap: '$mac'" >> ansible/vars/common.yaml
     fi
 
     for i in {1..3}; do
-        if [ "$(grep mac_master$i ansible/vars/common.yaml)" == "" ]; then
-            mac=$(sudo virsh domiflist ${CLUSTER_NAME}-master$i | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
-            echo "mac_master$i: '$mac'" >> ansible/vars/common.yaml
+        if [ "$(grep mac_master${i} ansible/vars/common.yaml)" == "" ]; then
+            mac=$(sudo virsh domiflist ${CLUSTER_NAME}-master${i} | grep $CLUSTER_NAME | grep -Eo '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
+            echo "mac_master${i}: '$mac'" >> ansible/vars/common.yaml
         fi
     done
 
-    for i in {1..3}; do
-        if [ "$(grep mac_worker$i ansible/vars/common.yaml)" == "" ]; then
-            mac=$(sudo virsh domiflist ${CLUSTER_NAME}-worker$i | grep $CLUSTER_NAME | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
-            echo "mac_worker$i: '$mac'" >> ansible/vars/common.yaml
+    for i in $(seq 1 ${NUMBER_WORKERS}); do
+        if [ "$(grep mac_worker${i} ansible/vars/common.yaml)" == "" ]; then
+            mac=$(sudo virsh domiflist ${CLUSTER_NAME}-worker${i} | grep $CLUSTER_NAME | grep -Eo '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
+            echo "mac_worker${i}: '$mac'" >> ansible/vars/common.yaml
         fi
     done
 }

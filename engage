@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Make sure this script does not kill your laptop.
+# Make sure this script does not kill your system.
 /usr/bin/renice +19 -p $$ >/dev/null 2>&1
 /usr/bin/ionice -c2 -n7 -p $$ >/dev/null 2>&1
 

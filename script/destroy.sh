@@ -32,7 +32,7 @@ cluster_destroy () {
     # subscription-manager remove --all
     # subscription-manager unregister
 
-    if [ "$BASTION_INSTALL_TYPE" == "redhat" ]; then
+    if [ "$BASTION_TYPE" == "redhat" ]; then
         echo "Start the Red Hat bastion vm to unregister..."
         sudo virsh start --domain ${CLUSTER_NAME}-bastion
 
@@ -73,7 +73,7 @@ cluster_destroy () {
 
 
     echo "Deleting nodes..."
-    for node in bootstrap master1 master2 master3 worker1 worker2 worker3 bastion; do
+    for node in bastion bootstrap master1 master2 master3; do
         sudo virsh undefine --domain ${CLUSTER_NAME}-$node --remove-all-storage 
     done
 
@@ -86,7 +86,7 @@ cluster_destroy () {
     sudo virsh net-undefine --network ${CLUSTER_NAME}
 
     echo "Removing related files..."
-    rm -rf ssh/
+    rm -rf ssh/ ./.re-run-with-network
     sudo rmdir ${LIBVIRT_STORAGE_POOL_BASE}/${CLUSTER_NAME}
 
     echo

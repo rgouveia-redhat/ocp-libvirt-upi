@@ -64,3 +64,4 @@ ansible/hosts
 ansible/facts/*
 ansible/vars/common.yaml
 .vscode/ltex.hiddenFalsePositives.en-US.txt
+.re-run-with-network

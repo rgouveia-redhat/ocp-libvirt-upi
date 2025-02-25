@@ -50,9 +50,15 @@ cluster_start () {
     done
 
     echo 
-    echo "Starting nodes..."
-    for host in master1 master2 master3 worker1 worker2 worker3; do
-        sudo virsh start --domain ${CLUSTER_NAME}-$host
+    echo "Starting masters..."
+    for i in $(seq 1 3); do
+        sudo virsh start --domain ${CLUSTER_NAME}-master${i}
+    done
+
+    echo 
+    echo "Starting workers..."
+    for i in $(seq 1 ${NUMBER_WORKERS}); do
+        sudo virsh start --domain ${CLUSTER_NAME}-worker${i}
     done
 
     echo
