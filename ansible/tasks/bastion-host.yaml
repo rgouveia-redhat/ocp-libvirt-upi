@@ -22,26 +22,6 @@
       state: absent
   when: free_pe.stdout | int > 0
 
-- name: Update Server
-  yum:
-    name: '*'
-    state: latest
-    update_cache: yes
-  register: updated
-
-# If updated, reboot server and wait for SSH readiness.
-- block:
-    - name: Reboot Server
-      command: shutdown +1 -r
-
-    - name: Wait for reboot cycle
-      wait_for:
-        delay: 70
-        host: "{{ inventory_hostname }}"
-        port: 22
-        state: started
-      delegate_to: localhost
-  when: updated.changed == true
 
 - name: Install needed packages
   ansible.builtin.package:
