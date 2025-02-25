@@ -1,5 +1,134 @@
 # -*-Shell-script-*-
 
+# This is a very idiotic way of spreading the vms per disks.
+# But, I am in a hurry, and... I don't care!
+
+get_storage_for () {
+
+  echo -n "$(date +%T) INFO: Get storage index for $1 == "
+
+  if [[ ${#LIBVIRT_STORAGE_POOL[@]} -eq 0 ]]; then
+    echo -n "$(date +%T) ERROR: No Storage pools defined."
+    exit -3
+  fi
+
+  if [[ ${#LIBVIRT_STORAGE_POOL[@]} -eq 1 ]]; then
+    STORAGE_POOL_INDEX=0
+    echo $STORAGE_POOL_INDEX
+    return
+  fi
+
+  if [[ ${#LIBVIRT_STORAGE_POOL[@]} -eq 2 ]]; then
+    STORAGE_POOL_INDEX=$((0 + $RANDOM % 1))
+    echo $STORAGE_POOL_INDEX
+    return
+  fi
+
+  # Else, assume 3 pools or more.
+  case "$1" in
+  
+    bastion|master1)
+      STORAGE_POOL_INDEX=0
+      ;;
+
+    bootstrap|master2|worker1)
+      STORAGE_POOL_INDEX=1
+      ;;
+
+    master3|worker2)
+      STORAGE_POOL_INDEX=2
+      ;;
+
+    *|'')
+      max=${#LIBVIRT_STORAGE_POOL[@]}
+      ((max--))
+      STORAGE_POOL_INDEX=$((0 + $RANDOM % $max))
+      ;;
+
+  esac
+
+  echo $STORAGE_POOL_INDEX
+}
+
+get_available_subnet () {
+
+  # TODO: What if a host has networks not in the 192.168.0.0/16 range ???
+
+  # Get Libvirt existing subnets
+  libvirt_networks=$(sudo virsh net-list --name --all)
+  #echo $libvirt_networks
+
+  subnets=''
+  for net in $libvirt_networks; do
+    gw=$(sudo virsh net-dumpxml $net | xmlstarlet select --text -t -v '/network/ip/@address')
+    subnets="$subnets $gw"
+  done
+  #echo $subnets
+
+  # Get existing networks configured in the host
+  host_networks=$(ip route list | cut -d' ' -f1 | grep -v default)
+  #echo $host_networks
+
+  # Get the octets
+  octets=''
+  for sub in $subnets $host_networks; do
+    #echo "debug: $sub"
+    oct=$(echo $sub | cut -d'.' -f3)
+    octets="$octets $oct"
+  done
+  octets=$(echo $octets | sed 's/ /\n/g' | sort -n | uniq)
+  #echo $octets
+
+  # Select an available octet
+  n=1
+  found=0
+  # TODO: What if n>254 ???
+  while [ $found -eq 0 ]; do
+
+    exists=0
+    for oct in $octets; do
+      #echo "debug: $oct"
+      if [ "$oct" == "$n" ]; then
+        #echo "$n exists"
+        exists=1
+        break
+      fi
+    done
+
+    if [ $exists -eq 1 ]; then
+      ((n++))
+    else
+      found=1
+    fi
+  done
+  #echo "debug: available=$n"
+
+  LIBVIRT_NETWORK_PREFIX="192.168.${n}"
+
+  # Saving the prefix for script idempotent re-runs.
+  echo $LIBVIRT_NETWORK_PREFIX > ./.re-run-with-network
+}
+
+validate_defaults () {
+
+  if [ "$LIBVIRT_URI" == "" ]; then
+    LIBVIRT_URI='qemu:///system'
+  fi
+
+  if [ "$LIBVIRT_NETWORK_PREFIX" == "" ]; then
+    # Check if network file exists and re-use it.
+    if [ -f ./.re-run-with-network ]; then
+      echo "$(date +%T) INFO: Previously selected network file exists. Re-using it."
+      LIBVIRT_NETWORK_PREFIX=$(cat ./.re-run-with-network)
+    else
+      echo "$(date +%T) INFO: Get available subnet..."
+      get_available_subnet
+    fi
+  fi
+
+  #exit 1
+}
+
 create_ssh_key () {
 
     ### Check/Create SSH Keys. OpenShift compatible.

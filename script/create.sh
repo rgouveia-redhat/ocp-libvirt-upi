@@ -10,8 +10,8 @@ IMPORTANT: This script uses the values defined in the 'Settings' file. Feel free
 
 
 LIBVIRT_URI=$LIBVIRT_URI
-LIBVIRT_NETWORK_PREFIX=$LIBVIRT_NETWORK_PREFIX
-LIBVIRT_STORAGE_POOL_BASE=$LIBVIRT_STORAGE_POOL_BASE
+LIBVIRT_NETWORK_SUBNET=${LIBVIRT_NETWORK_PREFIX}.0/24
+LIBVIRT_STORAGE_POOL=${LIBVIRT_STORAGE_POOL[@]}
 
 BASTION_TYPE=$BASTION_TYPE
 BASTION_VARIANT=$BASTION_VARIANT
@@ -157,22 +157,36 @@ libvirt_create_network () {
 
 libvirt_create_storage () {
 
-    ### Set permission on images folder.
-    sudo chown -R qemu:qemu $LIBVIRT_STORAGE_POOL_BASE
-
     ### Create the storage pool for the cluster.
-    tmp=$(sudo virsh pool-list --all --name | egrep "^${CLUSTER_NAME}\s*$")
-    if [ "$tmp" != "" ] ; then
-        echo "$(date +%T) INFO: Storage Pool already exists."
-    else
-        sudo mkdir -p $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME
-        sudo chown -R qemu:qemu $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME
-        sudo virsh pool-create-as --print-xml --name $CLUSTER_NAME --type dir --target $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME > /tmp/pool-tmp.xml
-        sudo virsh pool-define --file /tmp/pool-tmp.xml
-        sudo virsh pool-autostart $CLUSTER_NAME
-        sudo virsh pool-start $CLUSTER_NAME
-        rm /tmp/pool-tmp.xml
-    fi
+    for pool in ${LIBVIRT_STORAGE_POOL[@]}; do
+
+        pool_name=$(echo $pool | sed 's/\//-/g')
+
+        tmp=$(sudo virsh pool-list --all --name | grep -E "^${CLUSTER_NAME}-${pool_name}\s*$")
+        if [ "$tmp" != "" ] ; then
+            echo "$(date +%T) INFO: Storage Pool ${CLUSTER_NAME}-${pool_name} already exists."
+        else
+            echo "$(date +%T) INFO: Creating Storage Pool $pool/$CLUSTER_NAME ..."
+
+            ### Set permission on parent folder.
+            sudo chown -R qemu:qemu $pool
+
+            ### Create and set permission on cluster folder
+            sudo mkdir -p ${pool}/$CLUSTER_NAME
+            sudo chown -R qemu:qemu ${pool}/$CLUSTER_NAME 
+
+            ### Create libvirt storage pool
+            sudo virsh pool-create-as --print-xml \
+                --name ${CLUSTER_NAME}-${pool_name} \
+                --type dir \
+                --target ${pool}/${CLUSTER_NAME} > /tmp/pool-tmp.xml
+
+            sudo virsh pool-define --file /tmp/pool-tmp.xml
+            sudo virsh pool-autostart ${CLUSTER_NAME}-${pool_name}
+            sudo virsh pool-start ${CLUSTER_NAME}-${pool_name}
+            rm /tmp/pool-tmp.xml
+        fi
+    done
 }
 
 libvirt_create_bastion () {
@@ -202,13 +216,17 @@ libvirt_create_bastion () {
             exit 5
         fi
 
+        get_storage_for bastion
+        disk="${LIBVIRT_STORAGE_POOL[${STORAGE_POOL_INDEX}]}/$CLUSTER_NAME/${CLUSTER_NAME}-bastion.qcow2"
+        echo "$(date +%T) INFO: Using disk: $disk"
+
         # Create vm with default NAT network.
         sudo nice -n 19 virt-install \
             --name ${CLUSTER_NAME}-bastion \
             --cpu host-model \
             --vcpus $BASTION_CPUS \
             --memory $BASTION_MEMORY_SIZE \
-            --disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-bastion.qcow2,size=$BASTION_DISK_SIZE \
+            --disk ${disk},size=$BASTION_DISK_SIZE \
             --location $BASTION_INSTALL_ISO \
             --os-variant $BASTION_VARIANT \
             --network network=default,model=virtio \
@@ -254,7 +272,7 @@ libvirt_create_bootstrap () {
             --cpu host-model \
             --vcpus $BOOTSTRAP_CPUS \
             --memory $BOOTSTRAP_MEMORY_SIZE \
-            --disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-bootstrap.qcow2,size=$BOOTSTRAP_DISK_SIZE \
+            --disk ${disk},size=$BOOTSTRAP_DISK_SIZE \
             --pxe \
             --boot network,hd,menu=off \
             --os-variant $BASTION_VARIANT \
@@ -284,7 +302,7 @@ libvirt_create_masters () {
                 --cpu host-model \
                 --vcpus $MASTER_CPUS \
                 --memory $MASTER_MEMORY_SIZE \
-                --disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-master$i.qcow2,size=$MASTER_DISK_SIZE \
+                --disk ${disk},size=$MASTER_DISK_SIZE \
                 --pxe \
                 --boot network,hd,menu=off \
                 --os-variant $BASTION_VARIANT \
@@ -315,7 +333,7 @@ libvirt_create_workers () {
                 --cpu host-model \
                 --vcpus $WORKER_CPUS \
                 --memory $WORKER_MEMORY_SIZE \
-                --disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-worker$i.qcow2,size=$WORKER_DISK_SIZE \
+                --disk ${disk},size=$WORKER_DISK_SIZE \
                 --pxe \
                 --boot network,hd,menu=off \
                 --os-variant $BASTION_VARIANT \
