@@ -74,7 +74,7 @@ cluster_destroy () {
 
     echo "Deleting nodes..."
     for node in bastion bootstrap master1 master2 master3; do
-        sudo virsh undefine --domain ${CLUSTER_NAME}-$node --remove-all-storage 
+        sudo virsh undefine --domain ${CLUSTER_NAME}-$node --remove-all-storage
     done
     for i in $(seq 1 ${NUMBER_WORKERS}); do
         sudo virsh undefine --domain ${CLUSTER_NAME}-worker${i} --remove-all-storage
