@@ -6,10 +6,8 @@
 show_settings () {
 
     echo "
-IMPORTANT: This script uses the values defined in the 'Settings' file.
-           Feel free to adjust the values to your needs.
+IMPORTANT: This script uses the values defined in the 'Settings' file. Feel free to adjust the values to your needs.
 
-These are the current values for your reference:
 
 LIBVIRT_URI=$LIBVIRT_URI
 LIBVIRT_NETWORK_PREFIX=$LIBVIRT_NETWORK_PREFIX
@@ -65,18 +63,20 @@ check_requisites () {
         echo "$(date +%T) INFO: Libvirt installed and enabled."
     fi
 
+    ### Enabling service resolved.
+    echo "$(date +%T) INFO: Configuring Host nameserver to recognize cluster fqdn..."
+    if [ "$(sudo systemctl is-active systemd-resolved.service)" != "active" ]; then
+        sudo systemctl enable --now systemd-resolved.service
+    else
+        echo "$(date +%T) INFO: systemd-resolved installed and enabled."
+    fi
+
     ### Check for installation ISO.
     if [ "$BASTION_INSTALL_ISO" != "" ] && [ -f $BASTION_INSTALL_ISO ] ; then
         echo "$(date +%T) INFO: Source: $BASTION_INSTALL_ISO"
     else
         echo "$(date +%T) ERROR: Install ISO not found! Please define BASTION_INSTALL_ISO."
         exit 2
-    fi
-
-    ### Enabling service resolved.
-    echo "$(date +%T) INFO: Configuring Host nameserver to recognize cluster fqdn..."
-    if [ "$(sudo systemctl is-active systemd-resolved.service)" != "active" ]; then
-        sudo systemctl enable --now systemd-resolved.service
     fi
 
     ### Check for needed binaries.
@@ -108,6 +108,13 @@ check_requisites () {
         echo "$(date +%T) INFO: ansible detected."
     else
         packages="$packages ansible"
+    fi
+
+    xmlstarlet --version 2>&1 1>/dev/null
+    if [ $? -eq 0 ]; then
+        echo "$(date +%T) INFO: xmlstarlet detected."
+    else
+        packages="$packages xmlstarlet"
     fi
 
     if [ "$packages" != "" ] ; then
@@ -193,13 +200,14 @@ libvirt_create_bastion () {
         fi
 
         # Create vm with default NAT network.
-        sudo nice -n 19 virt-install --name ${CLUSTER_NAME}-bastion \
-            --cpu host \
+        sudo nice -n 19 virt-install \
+            --name ${CLUSTER_NAME}-bastion \
+            --cpu host-model \
             --vcpus $BASTION_CPUS \
             --memory $BASTION_MEMORY_SIZE \
             --disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-bastion.qcow2,size=$BASTION_DISK_SIZE \
             --location $BASTION_INSTALL_ISO \
-            --os-variant $variant \
+            --os-variant $BASTION_VARIANT \
             --network network=default,model=virtio \
             --network network=${CLUSTER_NAME},model=virtio \
             --initrd-inject files/anaconda.ks \
@@ -238,8 +246,9 @@ libvirt_create_bootstrap () {
         echo "$(date +%T) INFO: Using disk: $disk"
 
         # Create vm in cluster network.
-        sudo nice -n 19 virt-install --name ${CLUSTER_NAME}-bootstrap \
-            --cpu host \
+        sudo nice -n 19 virt-install \
+            --name ${CLUSTER_NAME}-bootstrap \
+            --cpu host-model \
             --vcpus $BOOTSTRAP_CPUS \
             --memory $BOOTSTRAP_MEMORY_SIZE \
             --disk $LIBVIRT_STORAGE_POOL_BASE/$CLUSTER_NAME/${CLUSTER_NAME}-bootstrap.qcow2,size=$BOOTSTRAP_DISK_SIZE \

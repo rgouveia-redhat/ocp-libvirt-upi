@@ -45,6 +45,7 @@ show_help_install () {
 
 - To SSH in to the bastion host, execute one of:
   ssh -i ssh/id_rsa root@bastion.${CLUSTER_NAME}.${CLUSTER_DOMAIN}
+  ssh -i ssh/id_rsa root@${LIBVIRT_NETWORK_PREFIX}.3
 
 ### In the bastion host: ###
 
