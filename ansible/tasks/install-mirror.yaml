@@ -90,13 +90,13 @@
     owner: root
     group: root
     mode: '0644'
-    backup: no
+    backup: false
 
 - name: Permit traffic in port 5000/tcp
   ansible.posix.firewalld:
     port: "5000/tcp"
-    permanent: yes
-    immediate: yes
+    permanent: true
+    immediate: true
     state: enabled
 
 - name: Creating registry Systemd configuration file
@@ -106,14 +106,14 @@
     owner: root
     group: root
     mode: '0644'
-    backup: no
+    backup: false
 
-- name: restart and enable podman-registry.service
+- name: Restart and enable podman-registry.service
   ansible.builtin.systemd:
     name: podman-registry.service
     state: started
-    enabled: yes
-    daemon_reload: yes
+    enabled: true
+    daemon_reload: true
 
 - name: Wait for port 5000 to become open on the host
   ansible.builtin.wait_for:
@@ -150,7 +150,7 @@
     owner: root
     group: root
     mode: '0755'
-    backup: no
+    backup: false
 
 - name: Run script to create the registry pull secret
   ansible.builtin.command:

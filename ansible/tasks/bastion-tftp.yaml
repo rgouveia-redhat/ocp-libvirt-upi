@@ -21,6 +21,11 @@
   ansible.builtin.file:
     path: /var/lib/tftpboot/pxelinux.cfg
     state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+### Menus
 
 - name: Configure TFTP pxelinux.cfg/default
   ansible.builtin.template:

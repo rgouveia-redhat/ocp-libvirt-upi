@@ -55,6 +55,9 @@
       - chrony
       - jq
       - git
+      - openssl
+      - httpd-tools
+      - podman
     state: present
 
 # We only want the bastion nameserver as active.
