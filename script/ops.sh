@@ -126,7 +126,10 @@ validate_defaults () {
     fi
   fi
 
-  #exit 1
+  if [ "$DISCONNECTED" == "true" ] && [ "$REGISTRY" == "false" ]; then
+    echo "$(date +%T) WARNING: Disconnected requested! Changing registry to true."
+    REGISTRY=true
+  fi
 }
 
 create_ssh_key () {
