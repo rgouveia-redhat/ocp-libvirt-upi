@@ -59,16 +59,3 @@
       - httpd-tools
       - podman
     state: present
-
-# We only want the bastion nameserver as active.
-# Disable the nameserver provided by the "default" network.
-
-- block:
-  - name: Disable the nameserver provided by the "default" network
-    ansible.builtin.shell: nmcli connection modify {{ ansible_facts.default_ipv4.interface }} ipv4.ignore-auto-dns yes
-
-  - name: restart NetworkManager
-    ansible.builtin.systemd:
-      name: NetworkManager.service
-      state: restarted
-  when: ansible_dns.nameservers|length > 1

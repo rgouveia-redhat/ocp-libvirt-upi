@@ -44,3 +44,17 @@
     state: enabled
     permanent: true
     immediate: true
+
+# We only want the bastion nameserver as active.
+# Disable the nameserver provided by the "default" network.
+
+- name: Disable the nameserver provided by the default network
+  when: ansible_dns.nameservers|length > 1
+  block:
+    - name: Modify nmcli connection
+      ansible.builtin.shell: nmcli connection modify {{ ansible_facts.default_ipv4.interface }} ipv4.ignore-auto-dns yes
+
+    - name: Restart NetworkManager
+      ansible.builtin.systemd:
+        name: NetworkManager.service
+        state: restarted
