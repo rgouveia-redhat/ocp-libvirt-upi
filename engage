@@ -26,7 +26,7 @@ case "$1" in
 
 create)
 
-    if ! ([ -f ~/.ansible-vault.password ] || [ -f ~/.rh.yaml ]); then
+    if ! ([ -f ~/.ansible-vault.password ] && [ -f ~/.rh.yaml ]); then
         echo "
 Red Hat Subscription credential files do not exist!
 
