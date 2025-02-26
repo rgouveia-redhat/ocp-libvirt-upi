@@ -7,7 +7,7 @@ options {
 	recursing-file	"/var/named/data/named.recursing";
 
 	forwarders {
-		{{ dns_forwarders }};
+		{{ network_prefix }}.1;
     };
 	forward first;
 
