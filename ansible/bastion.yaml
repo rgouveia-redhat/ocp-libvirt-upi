@@ -81,3 +81,18 @@
       ansible.builtin.import_tasks: tasks/install-config.yaml
       tags:
         - inst-config
+
+    - name: Messages !!!
+      ansible.builtin.debug:
+        msg:
+          - "Some decisions were made to speed up the preparation time:"
+          - "  - The bastion was not updated. Update with 'dnf update'"
+          - "  - The mirror registry sync was delayed until the very end, not to delay any other operations. The sync will start now if available."
+
+
+    - name: Execute the mirror registry script. GO TAKE A COFFEE!!!
+      ansible.builtin.shell:
+        cmd: PATH=$PATH:/root/bin /root/registry/mirror-registry.sh
+      args:
+        executable: /bin/bash
+      when: registry
