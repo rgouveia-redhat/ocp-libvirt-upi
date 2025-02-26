@@ -5,6 +5,7 @@
 
   vars_files:
     - vars/common.yaml
+    - ~/.rh.yaml
 
   tasks:
 
