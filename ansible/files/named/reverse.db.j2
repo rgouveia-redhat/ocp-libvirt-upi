@@ -22,6 +22,8 @@ $ORIGIN {{ network_reverse }}.IN-ADDR.ARPA.
 11    IN    PTR    master2.{{ cluster_name }}.{{ cluster_domain }}.
 12    IN    PTR    master3.{{ cluster_name }}.{{ cluster_domain }}.
 
-20    IN    PTR    worker1.{{ cluster_name }}.{{ cluster_domain }}.
-21    IN    PTR    worker2.{{ cluster_name }}.{{ cluster_domain }}.
-22    IN    PTR    worker3.{{ cluster_name }}.{{ cluster_domain }}.
+{% set ip = namespace(value=20) %}
+{% for i in range(1, (number_workers | int) + 1) %}
+{{ ip.value }}    IN    PTR    worker{{ i }}.{{ cluster_name }}.{{ cluster_domain }}.
+{% set ip.value = ip.value + 1 %}
+{% endfor %}

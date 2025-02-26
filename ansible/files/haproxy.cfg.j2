@@ -88,14 +88,14 @@ listen ingress-router-443
   bind *:443
   mode tcp
   balance source
-  server worker1 worker1.{{ cluster_name }}.{{ cluster_domain }}:443 check inter 1s
-  server worker2 worker2.{{ cluster_name }}.{{ cluster_domain }}:443 check inter 1s
-  server worker3 worker3.{{ cluster_name }}.{{ cluster_domain }}:443 check inter 1s
+{% for i in range(1, (number_workers | int) + 1) %}
+  server worker{{ i }} worker{{ i }}.{{ cluster_name }}.{{ cluster_domain }}:443 check inter 1s
+{% endfor %}
 
 listen ingress-router-80
   bind *:80
   mode tcp
   balance source
-  server worker1 worker1.{{ cluster_name }}.{{ cluster_domain }}:80 check inter 1s
-  server worker2 worker2.{{ cluster_name }}.{{ cluster_domain }}:80 check inter 1s
-  server worker3 worker3.{{ cluster_name }}.{{ cluster_domain }}:80 check inter 1s
+{% for i in range(1, (number_workers | int) + 1) %}
+  server worker{{ i }} worker{{ i }}.{{ cluster_name }}.{{ cluster_domain }}:80 check inter 1s
+{% endfor %}

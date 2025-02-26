@@ -55,20 +55,29 @@ host master3 {
     fixed-address {{ network_prefix }}.12;
 }
 
+{# This needs rework!!! #}
+{# What if there are more workers ? #}
+
+{% if mac_worker1 is defined %}
 host worker1 {
     option host-name "worker1.{{ cluster_name }}.{{ cluster_domain }}";
     hardware ethernet {{ mac_worker1 }};
     fixed-address {{ network_prefix }}.20;
 }
+{% endif %}
 
+{% if mac_worker2 is defined %}
 host worker2 {
     option host-name "worker2.{{ cluster_name }}.{{ cluster_domain }}";
     hardware ethernet {{ mac_worker2 }};
     fixed-address {{ network_prefix }}.21;
 }
+{% endif %}
 
+{% if mac_worker3 is defined %}
 host worker3 {
     option host-name "worker3.{{ cluster_name }}.{{ cluster_domain }}";
     hardware ethernet {{ mac_worker3 }};
     fixed-address {{ network_prefix }}.22;
 }
+{% endif %}

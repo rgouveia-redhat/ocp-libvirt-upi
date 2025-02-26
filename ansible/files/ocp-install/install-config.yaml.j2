@@ -5,7 +5,7 @@ compute:
   hyperthreading: Enabled
   name: worker
   platform: {}
-  replicas: 3
+  replicas: {{ number_workers }}
 controlPlane:
   architecture: amd64
   hyperthreading: Enabled
