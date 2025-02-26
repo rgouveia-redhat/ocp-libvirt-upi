@@ -25,6 +25,37 @@ source Settings
 case "$1" in
 
 create)
+
+    if ! ([ -f ~/.ansible-vault.password ] || [ -f ~/.rh.yaml ]); then
+        echo "
+Red Hat Subscription credential files do not exist!
+
+Create the encrypted file '~/.rh.yaml' used by Ansible with:
+
+~~~
+$ ansible-vault create ~/.rh.yaml    # A password will be asked to encrypt the file.
+~~~
+
+With the YAML content:
+
+~~~
+---
+rh_username: <RH Username>
+rh_password: <RH Password>
+~~~
+
+Save the encryption password in the file '~/.ansible-vault.password':
+
+~~~
+$ cat ~/.ansible-vault.password
+my_encryption_password
+~~~
+
+"
+
+        exit 1
+    fi
+
     . script/ops.sh
     . script/create.sh
     . script/configure.sh
