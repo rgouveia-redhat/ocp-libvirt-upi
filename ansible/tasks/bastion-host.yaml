@@ -1,5 +1,17 @@
 ---
 
+- name: Register bastion host
+  community.general.redhat_subscription:
+    state: present
+    username: "{{ rh_username }}"
+    password: "{{ rh_password }}"
+    auto_attach: true
+    force_register: false
+    syspurpose:
+      role: "Red Hat Enterprise Linux Server"
+      usage: "Development/Test"
+      service_level_agreement: "Self-Support"
+
 - name: Get Free Physical Extents (PE)
   ansible.builtin.shell:
     cmd: vgdisplay | grep -oP 'Free  PE / Size[[:space:]]+\K[[:digit:]]+'
