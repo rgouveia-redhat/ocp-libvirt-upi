@@ -17,51 +17,70 @@
     - data
     - conf
 
+# TODO: If available, sync local mirror data before starting registry
 
-# If available, sync local mirror data before starting registry
-
-
-# Create bastion cert
 - name: Checking the existence of the bastion cert
   ansible.builtin.stat:
     path: /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.pem
   register: cert
 
-- block:
-
-  - name: Generating bastion cert key
-    ansible.builtin.shell:
-      cmd: openssl genrsa -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.key 2048
-
-  - name: Generating bastion cert request
-    ansible.builtin.shell:
-      cmd: openssl req -new -key /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.key -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.csr -subj "/CN=bastion.{{ cluster_name }}.{{ cluster_domain }}"
-
-  - name: Creating OpenSSL X509v3 extensions file for bastion
-    ansible.builtin.template:
-      src: files/registry/openssl-X509v3-extensions.j2
-      dest: /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.cnf
-      owner: root
-      group: root
-      mode: '0644'
-      backup: no
-
-  - name: Signing bastion certificate
-    ansible.builtin.shell:
-      cmd: openssl x509 -req -in /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.csr -CA /root/CA/CA_cert.pem -CAkey /root/CA/CA_key.pem -CAcreateserial -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.pem -days 825 -sha256 -extfile /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.cnf
-
+- name: Create mirror registry cert
   when: not cert.stat.exists
+  block:
 
+    - name: Generating mirror registry cert key
+      ansible.builtin.shell:
+        cmd: openssl genrsa -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.key 2048
+      args:
+        executable: /bin/bash
+      delegate_to: localhost
 
-- name: Checking the existence of the registry auth
+    - name: Generating mirror registry cert request
+      ansible.builtin.shell: |
+        openssl req -new \
+          -key /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.key \
+          -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.csr \
+          -subj "/CN=bastion.{{ cluster_name }}.{{ cluster_domain }}"
+      args:
+        executable: /bin/bash
+
+    - name: Creating OpenSSL X509v3 extensions file for bastion
+      ansible.builtin.template:
+        src: files/registry/openssl-X509v3-extensions.j2
+        dest: /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.cnf
+        owner: root
+        group: root
+        mode: '0644'
+        backup: false
+
+    - name: Signing bastion certificate
+      ansible.builtin.shell: |
+        openssl x509 -req \
+          -in /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.csr \
+          -CA /root/CA/CA_cert.pem \
+          -CAkey /root/CA/CA_key.pem \
+          -CAcreateserial \
+          -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.pem \
+          -days 825 \
+          -sha256 \
+          -extfile /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.cnf
+      args:
+        executable: /bin/bash
+
+- name: Checking the existence of the mirror registry auth
   ansible.builtin.stat:
     path: /opt/registry/auth/htpasswd
   register: auth
 
-# Auth. Username: admin, Password: redhat
-- name: Creating registry authentication file
-  ansible.builtin.shell:
-    cmd: htpasswd -bBc /opt/registry/auth/htpasswd admin redhat ; echo redhat > /opt/registry/auth/admin-password.txt
+# Auth:
+# Username: admin 
+# Password: redhat
+- name: Creating mirror registry authentication file
+  ansible.builtin.shell: |
+    htpasswd -bBc /opt/registry/auth/htpasswd admin redhat
+    echo redhat > /opt/registry/auth/admin-password.txt
+  args:
+    executable: /bin/bash
   when: not auth.stat.exists
 
 - name: Creating registry configuration file
@@ -106,12 +125,12 @@
     url: https://bastion.{{ cluster_name }}.{{ cluster_domain }}:5000/v2/_catalog
     url_username: admin
     url_password: redhat
-    return_content: yes
-  register: registry
+    return_content: true
+  register: output
 
 - name: status=200 and json payload of "{"repositories":[]}" is good!
   debug:
-    var: registry
+    var: output
 
 # Create a pull-secret for the registry:
 # https://docs.openshift.com/container-platform/4.9/installing/installing-mirroring-installation-images.html#installation-adding-registry-pull-secret_installing-mirroring-installation-images
@@ -146,10 +165,4 @@
     owner: root
     group: root
     mode: '0755'
-    backup: no
-
-- name: Execute the mirror registry script. GO TAKE A COFFEE!!!
-  ansible.builtin.shell:
-    cmd: PATH=$PATH:/root/bin /root/registry/mirror-registry.sh
-  args:
-    executable: /bin/bash
+    backup: false

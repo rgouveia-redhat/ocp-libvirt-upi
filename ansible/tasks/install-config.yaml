@@ -1,15 +1,39 @@
 ---
 
-# openshift-install
-- name: Get the pull secret in a a variable - version with registry credentials
-  ansible.builtin.shell:
-    cmd: cat registry/pull-secret.json | jq -c .
-  register: pull_secret
+# Generate a valid openshift-install
 
-- debug:
-    var: pull_secret
-  tags:
-    - debug
+- name: Collect data for the install-config.yaml with mirror registry
+  when: registry
+  block:
+
+    - name: Get the pull secret in a a variable with mirror registry credentials
+      ansible.builtin.shell:
+        cmd: cat /root/registry/pull-secret.json | jq -c .
+      register: pull_secret
+      when: registry
+
+    - name: Get the CA cert in a a variable
+      ansible.builtin.command:
+        cmd: awk '{$1="  "$1}1' /root/CA/CA_cert.pem
+      register: ca_cert
+
+    - name: Show CA content
+      debug:
+          var: ca_cert
+      tags:
+        - debug
+
+
+- name: Get the pull secret in a a variable
+  ansible.builtin.shell:
+    cmd: cat /root/pull-secret.txt | jq -c .
+  register: pull_secret
+  when: not registry
+
+# - debug:
+#    var: pull_secret
+#  tags:
+#    - debug
 
 - name: Get the SSH public key in a a variable
   ansible.builtin.command:
@@ -21,15 +45,6 @@
 #  tags:
 #    - debug
 
-- name: Get the CA cert in a a variable
-  ansible.builtin.command:
-    cmd: awk '{$1="  "$1}1' /root/CA/CA_cert.pem
-  register: ca_cert
-
-- debug:
-    var: ca_cert
-  tags:
-    - debug
 
 - name: Assemble the install-config.yaml
   ansible.builtin.template:
@@ -44,22 +59,22 @@
 # Ignition files
 
 # Checking for existing run. Remove folder to repeat.
-- name: Test existence of existing files
+- name: Test the existence of existing ignition files
   ansible.builtin.stat:
-    path: /root/{{ cluster_name }}/auth
+    path: /root/{{ cluster_name }}
   register: ignition_files
 
 - name: Generate and prepare ignition files
   when: not ignition_files.stat.exists
   block:
 
-  - name: Create folder for cluster
-    ansible.builtin.file:
-      path: /root/{{ cluster_name }}
-      state: directory
-      owner: root
-      group: root
-      mode: '0755'
+    - name: Create folder for cluster
+      ansible.builtin.file:
+        path: /root/{{ cluster_name }}
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
 
     - name: Copy install-config.yaml to install-dir
       ansible.builtin.copy:
@@ -76,23 +91,21 @@
 #      args:
 #        chdir: /root/
 
-  - name: Create ignition files
-    ansible.builtin.shell:
-      cmd: PATH=$PATH:/root/bin openshift-install --dir {{ cluster_name }} create ignition-configs
-    args:
-      chdir: /root/
+    - name: Create ignition files
+      ansible.builtin.shell:
+        cmd: PATH=$PATH:/root/bin openshift-install --dir {{ cluster_name }} create ignition-configs
+      args:
+        chdir: /root/
 
-  - name: Copy ignition files to http server
-    ansible.builtin.copy:
-      src: "{{ item }}"
-      dest: /var/www/html
-      owner: apache
-      group: apache
-      mode: '0664'
-      remote_src: yes
-    with_items:
-      - /root/{{ cluster_name }}/bootstrap.ign
-      - /root/{{ cluster_name }}/master.ign
-      - /root/{{ cluster_name }}/worker.ign
-
-  when: not ignition_files.stat.exists
+    - name: Copy ignition files to http server
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: /var/www/html
+        owner: apache
+        group: apache
+        mode: '0664'
+        remote_src: true
+      with_items:
+        - /root/{{ cluster_name }}/bootstrap.ign
+        - /root/{{ cluster_name }}/master.ign
+        - /root/{{ cluster_name }}/worker.ign
