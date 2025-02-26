@@ -237,9 +237,12 @@ libvirt_create_bastion () {
 
         rm files/anaconda.ks
 
-        echo "$(date +%T) [ACTION MAY BE REQUIRED] Open a console to the bastion VM and 
-                              check if all steps successful. 
-                              For example, the Red Hat Network authentication."
+        echo "
+        
+                    $(date +%T) [ACTION MAY BE REQUIRED] Open a console to the bastion VM and 
+                                check if all steps are successful. For example, the Red Hat Network authentication.
+
+"
 
         echo "$(date +%T) INFO: VMs will power off after installation. Waiting for it..."
 
