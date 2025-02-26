@@ -7,7 +7,7 @@
 - name: Checking the existence of the CA cert
   ansible.builtin.stat:
     path: /root/CA/CA_cert.pem
-  register: CA
+  register: ca
 
 - block:
 

@@ -9,7 +9,7 @@ configure_env () {
     fi
 
     # Get cluster host interface
-    INTERFACE=$(ip route | grep "${LIBVIRT_NETWORK_PREFIX}\." | egrep -v virbr0 | grep -oP 'dev \K\w+')
+    INTERFACE=$(ip route | grep "${LIBVIRT_NETWORK_PREFIX}\." | grep -Ev virbr0 | grep -oP 'dev \K\w+')
 
     # Configuring host resolvectl
     sudo resolvectl domain ${INTERFACE} ${CLUSTER_NAME}.${CLUSTER_DOMAIN}

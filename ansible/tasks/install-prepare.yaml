@@ -1,14 +1,5 @@
 ---
 
-- name: Install needed packages
-  ansible.builtin.package:
-    name:
-      - openssl
-      - httpd-tools
-      - podman
-      - skopeo
-    state: present
-
 - name: Copy SSH key to bastion
   ansible.builtin.copy:
     src: "{{ item }}"

@@ -7,7 +7,9 @@
   ansible.builtin.copy:
     src: "{{ item }}"
     dest: /var/lib/tftpboot/
-    remote_src: yes
+    remote_src: true
+    mode: preserve
+    owner: root
   with_items:
     - /usr/share/syslinux/memdisk
     - /usr/share/syslinux/menu.c32
@@ -16,7 +18,7 @@
     - /usr/share/syslinux/libutil.c32
 
 - name: Create directory for PXE server configuration
-  file:
+  ansible.builtin.file:
     path: /var/lib/tftpboot/pxelinux.cfg
     state: directory
 
@@ -27,7 +29,7 @@
     owner: root
     group: root
     mode: '0644'
-    backup: no
+    backup: false
 
 - name: Configure TFTP pxelinux.cfg/bootstrap
   ansible.builtin.template:
@@ -36,16 +38,7 @@
     owner: root
     group: root
     mode: '0644'
-    backup: no
-
-- name: Create a symbolic link for bootstrap mac address
-  ansible.builtin.file:
-    src: bootstrap
-    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ mac_bootstrap | replace(':','-') }}
-    owner: root
-    group: root
-    mode: '0644'
-    state: link
+    backup: false
 
 - name: Configure TFTP pxelinux.cfg/masters
   ansible.builtin.template:
@@ -54,12 +47,50 @@
     owner: root
     group: root
     mode: '0644'
-    backup: no
+    backup: false
+
+- name: Configure TFTP pxelinux.cfg/workers
+  ansible.builtin.template:
+    src: files/tftp/worker.j2
+    dest: /var/lib/tftpboot/pxelinux.cfg/worker
+    owner: root
+    group: root
+    mode: '0644'
+    backup: false
+
+### Simbolic links for convenience
+
+# Delete previous links
+# Just to be sure. When a VM is deleted a new MAC is generated.
+
+- name: List files matching '01-*'
+  ansible.builtin.find:
+    file_type: link
+    paths: /var/lib/tftpboot/pxelinux.cfg/
+    patterns: '01-*'
+  register: to_remove
+
+- name: Remove links
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ to_remove.files }}"
+  when: to_remove.matched > 0
+
+
+- name: Create a symbolic link for bootstrap mac address
+  ansible.builtin.file:
+    src: bootstrap
+    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ mac_bootstrap | replace(':', '-') }}
+    owner: root
+    group: root
+    mode: '0644'
+    state: link
 
 - name: Create a symbolic link for masters mac address
   ansible.builtin.file:
     src: master
-    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ item | replace(':','-') }}
+    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ item | replace(':', '-') }}
     owner: root
     group: root
     mode: '0644'
@@ -76,12 +107,13 @@
     owner: root
     group: root
     mode: '0644'
-    backup: no
+    state: link
+  when: mac_worker2 is defined
 
 - name: Create a symbolic link for workers mac address
   ansible.builtin.file:
     src: worker
-    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ item | replace(':','-') }}
+    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ mac_worker3 | replace(':', '-') }}
     owner: root
     group: root
     mode: '0644'
@@ -95,13 +127,13 @@
   ansible.builtin.systemd:
     name: "{{ item }}"
     state: started
-    enabled: yes
+    enabled: true
   with_items:
     - tftp.service
     - tftp.socket
 
 - name: Configure Firewalld
-  firewalld:
+  ansible.posix.firewalld:
     service: tftp
     state: enabled
     permanent: true

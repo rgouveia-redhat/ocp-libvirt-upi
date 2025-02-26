@@ -8,15 +8,15 @@
     regexp: '^(Listen)\s+80\s*$'
     replace: '\1 81'
 
-- name: restart and enable httpd.service
+- name: Restart and enable httpd.service
   ansible.builtin.systemd:
     name: httpd.service
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Permit traffic in port 81/tcp
   ansible.posix.firewalld:
     port: "81/tcp"
-    permanent: yes
-    immediate: yes
+    permanent: true
+    immediate: true
     state: enabled

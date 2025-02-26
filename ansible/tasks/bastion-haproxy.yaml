@@ -10,7 +10,7 @@
     owner: root
     group: root
     mode: '0644'
-    backup: no
+    backup: false
 
 # semanage port -a -t http_port_t -p tcp 6443
 - name: Allow haproxy to listen on tcp port 6443
@@ -24,14 +24,14 @@
     - 6443
     - 22623
 
-- name: restart and enable haproxy.service
+- name: Restart and enable haproxy.service
   ansible.builtin.systemd:
     name: haproxy.service
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Configure Firewalld
-  firewalld:
+  ansible.posix.firewalld:
     service: "{{ item }}"
     state: enabled
     permanent: true
@@ -43,8 +43,8 @@
 - name: Permit traffic in OpenShift 'api' and 'api-int' ports
   ansible.posix.firewalld:
     port: "{{ item }}"
-    permanent: yes
-    immediate: yes
+    permanent: true
+    immediate: true
     state: enabled
   with_items:
     - "6443/tcp"

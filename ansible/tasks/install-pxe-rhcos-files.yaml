@@ -13,7 +13,7 @@
   ansible.builtin.get_url:
     url: "{{ item }}"
     dest: /var/www/html
-    force: no
+    force: false
     owner: apache
     group: apache
     mode: '0664'

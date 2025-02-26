@@ -16,10 +16,10 @@
     cmd: cat /root/.ssh/id_rsa.pub
   register: ssh_public_key
 
-- debug:
-    var: ssh_public_key
-  tags:
-    - debug
+# - debug:
+#    var: ssh_public_key
+#  tags:
+#    - debug
 
 - name: Get the CA cert in a a variable
   ansible.builtin.command:
@@ -38,7 +38,8 @@
     owner: root
     group: root
     mode: '0644'
-    backup: no
+    backup: false
+
 
 # Ignition files
 
@@ -48,10 +49,9 @@
     path: /root/{{ cluster_name }}/auth
   register: ignition_files
 
-- debug:
-    var: ignition_files
-
-- block:
+- name: Generate and prepare ignition files
+  when: not ignition_files.stat.exists
+  block:
 
   - name: Create folder for cluster
     ansible.builtin.file:
@@ -61,17 +61,20 @@
       group: root
       mode: '0755'
 
-  - name: Copying install-config.yaml to cluster folder
-    ansible.builtin.copy:
-      src: /root/install-config.yaml
-      dest: /root/{{ cluster_name }}/install-config.yaml
-      remote_src: yes
+    - name: Copy install-config.yaml to install-dir
+      ansible.builtin.copy:
+        src: /root/install-config.yaml
+        dest: /root/{{ cluster_name }}/install-config.yaml
+        owner: root
+        group: root
+        mode: '0640'
+        remote_src: true
 
-  - name: Create manifest files
-    ansible.builtin.shell:
-      cmd: PATH=$PATH:/root/bin openshift-install --dir {{ cluster_name}} create manifests
-    args:
-      chdir: /root/
+#    - name: Create manifest files
+#      ansible.builtin.shell:
+#        cmd: PATH=$PATH:/root/bin openshift-install --dir {{ cluster_name}} create manifests
+#      args:
+#        chdir: /root/
 
   - name: Create ignition files
     ansible.builtin.shell:

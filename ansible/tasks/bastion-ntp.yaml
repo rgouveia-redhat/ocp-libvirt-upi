@@ -10,16 +10,16 @@
     owner: root
     group: root
     mode: '0644'
-    backup: no
+    backup: false
 
-- name: restart and enable chronyd.service
+- name: Restart and enable chronyd.service
   ansible.builtin.systemd:
     name: chronyd.service
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Configure Firewalld
-  firewalld:
+  ansible.posix.firewalld:
     service: ntp
     state: enabled
     permanent: true

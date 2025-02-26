@@ -9,73 +9,37 @@
     owner: root
     group: named
     mode: '0740'
-    backup: no
+    backup: false
     validate: /usr/sbin/named-checkconf %s
 
-- name: Configure /var/named/dynamic/{{ cluster_domain }}.db
+- name: Configure dns zone
   ansible.builtin.template:
     src: files/named/zone.db.j2
     dest: /var/named/dynamic/{{ cluster_domain }}.db
     owner: root
     group: named
     mode: '0740'
-    backup: no
+    backup: false
     validate: /usr/sbin/named-checkzone "{{ cluster_domain }}" %s
 
-- name: Configure /var/named/dynamic/{{ network_reverse }}.in-addr.arpa.db
+- name: Configure dns reverse
   ansible.builtin.template:
     src: files/named/reverse.db.j2
     dest: /var/named/dynamic/{{ network_reverse }}.in-addr.arpa.db
     owner: root
     group: named
     mode: '0740'
-    backup: no
+    backup: false
     validate: /usr/sbin/named-checkzone "{{ network_reverse }}.in-addr.arpa" %s
 
-- name: restart and enable named.service
+- name: Restart and enable named.service
   ansible.builtin.systemd:
     name: named.service
     state: started
-    enabled: yes
-
-- name: Configure /etc/named.conf
-  ansible.builtin.template:
-    src: files/named/named.conf.j2
-    dest: /etc/named.conf
-    owner: root
-    group: named
-    mode: '0740'
-    backup: no
-    validate: /usr/sbin/named-checkconf %s
-
-- name: Configure /var/named/dynamic/{{ cluster_domain }}.db
-  ansible.builtin.template:
-    src: files/named/zone.db.j2
-    dest: /var/named/dynamic/{{ cluster_domain }}.db
-    owner: root
-    group: named
-    mode: '0740'
-    backup: no
-    validate: /usr/sbin/named-checkzone "{{ cluster_domain }}" %s
-
-- name: Configure /var/named/dynamic/{{ network_reverse }}.in-addr.arpa.db
-  ansible.builtin.template:
-    src: files/named/reverse.db.j2
-    dest: /var/named/dynamic/{{ network_reverse }}.in-addr.arpa.db
-    owner: root
-    group: named
-    mode: '0740'
-    backup: no
-    validate: /usr/sbin/named-checkzone "{{ network_reverse }}.in-addr.arpa" %s
-
-- name: restart and enable named.service
-  ansible.builtin.systemd:
-    name: named.service
-    state: started
-    enabled: yes
+    enabled: true
 
 - name: Configure Firewalld
-  firewalld:
+  ansible.posix.firewalld:
     service: dns
     state: enabled
     permanent: true

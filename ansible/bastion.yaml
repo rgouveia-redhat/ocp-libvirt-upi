@@ -45,15 +45,9 @@
       tags:
         - ntp
 
-    - debug:
-        var: registry_nfs
-      tags:
-        - debug
-
-    # iscsi?
     - name: Configure NFS Server for OpenShift Internal Registry
       ansible.builtin.import_tasks: tasks/bastion-registry-nfs.yaml
-      when: registry_nfs == true
+      when: registry_nfs
       tags:
         - registry-nfs
 
