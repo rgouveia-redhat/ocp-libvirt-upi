@@ -68,6 +68,9 @@
     - /root/bin/opm-linux-{{ cluster_version }}.tar.gz
   when: not cli_install_bin.stat.exists
 
+
+### Add commands to .bash_profile
+
 - name: Add oc completion commands in .bash_profile
   ansible.builtin.lineinfile:
     path: /root/.bash_profile
@@ -85,3 +88,15 @@
     path: /root/.bash_profile
     regexp: '^export KUBECONFIG=/root/{{ cluster_name }}/auth/kubeconfig'
     line: 'export KUBECONFIG=/root/{{ cluster_name }}/auth/kubeconfig'
+
+
+### Add common commands to .bash_history
+
+- name: Add commands to .bash_history
+  ansible.builtin.copy:
+    src: files/bash_history
+    dest: /root/.bash_history
+    owner: root
+    group: root
+    mode: '0600'
+    backup: false

@@ -1,0 +1,5 @@
+openshift-install --dir c41801d wait-for bootstrap-complete
+openshift-install --dir c41801d wait-for install-complete
+oc get csr -o name | xargs oc adm certificate approve
+oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' | xargs oc adm certificate approve
+watch "oc get clusterversion ; oc get co ; oc get nodes ; oc get csr"
