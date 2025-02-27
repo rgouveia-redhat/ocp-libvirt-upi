@@ -73,7 +73,9 @@ ansible-only)
     ;;
 
 env)
+    . script/ops.sh
     . script/env.sh
+    validate_defaults
     configure_env
     ;;
 

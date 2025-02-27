@@ -8,6 +8,12 @@ configure_env () {
         exit -10
     fi
 
+    # Prefix network must be defined
+    if [ "$LIBVIRT_NETWORK_PREFIX" == "" ]; then
+        echo "Error: LIBVIRT_NETWORK_PREFIX is not defined."
+        exit -11
+    fi
+
     # Get cluster host interface
     INTERFACE=$(ip route | grep "${LIBVIRT_NETWORK_PREFIX}\." | grep -v virbr0 | grep -oP 'dev \K\w+')
 
