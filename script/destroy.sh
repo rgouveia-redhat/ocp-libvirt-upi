@@ -81,8 +81,12 @@ cluster_destroy () {
     done
 
     echo "Deleting cluster storage pool..."
-    sudo virsh pool-destroy --pool ${CLUSTER_NAME}
-    sudo virsh pool-undefine --pool ${CLUSTER_NAME}
+    for pool in ${LIBVIRT_STORAGE_POOL[@]}; do
+        pool_name=$(echo $pool | sed 's/\//-/g')
+        sudo virsh pool-destroy --pool ${CLUSTER_NAME}-${pool_name}
+        sudo virsh pool-undefine --pool ${CLUSTER_NAME}-${pool_name}
+        sudo rmdir ${pool}/${CLUSTER_NAME}
+    done
 
     echo "Deleting cluster network..."
     sudo virsh net-destroy --network ${CLUSTER_NAME}
@@ -90,7 +94,7 @@ cluster_destroy () {
 
     echo "Removing related files..."
     rm -rf ssh/ ./.re-run-with-network
-    sudo rmdir ${LIBVIRT_STORAGE_POOL_BASE}/${CLUSTER_NAME}
+    #sudo rmdir ${LIBVIRT_STORAGE_POOL_BASE}/${CLUSTER_NAME}
 
     echo
     echo "Cluster removed!!!"
