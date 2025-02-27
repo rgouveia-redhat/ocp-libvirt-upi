@@ -33,7 +33,6 @@
         cmd: openssl genrsa -out /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.key 2048
       args:
         executable: /bin/bash
-      delegate_to: localhost
 
     - name: Generating mirror registry cert request
       ansible.builtin.shell: |
