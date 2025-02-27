@@ -13,6 +13,21 @@
   when: not ca.stat.exists
   block:
 
+    ### Just in case it is a re-run. Clean up artifacts with previous CA.
+    - name: clean up existing certs to force re-generation
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.pem
+
+    - name: Stop existing registry if available
+      ansible.builtin.systemd:
+        name: podman-registry.service
+        state: stopped
+        enabled: true
+    ###
+
     - name: Create a directory for the CA
       ansible.builtin.file:
         path: /root/CA
