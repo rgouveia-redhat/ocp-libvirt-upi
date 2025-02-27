@@ -130,6 +130,11 @@ validate_defaults () {
     echo "$(date +%T) WARNING: Disconnected requested! Changing registry to true."
     REGISTRY=true
   fi
+
+  if ! ( [[ $NUMBER_WORKERS -eq 0 ]] || [[ $NUMBER_WORKERS -ge 2 ]] ); then
+    echo "$(date +%T) ERROR: Allowed number of workers is: 0, 2 or more. (not tested with more than 3)"
+    exit
+  fi
 }
 
 create_ssh_key () {
