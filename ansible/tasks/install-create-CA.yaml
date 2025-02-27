@@ -20,6 +20,7 @@
         state: absent
       with_items:
         - /opt/registry/certs/bastion.{{ cluster_name }}.{{ cluster_domain }}.pem
+        - /root/{{ cluster_name }}
 
     - name: Stop existing registry if available
       ansible.builtin.systemd:
