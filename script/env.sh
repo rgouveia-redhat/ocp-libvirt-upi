@@ -25,8 +25,18 @@ configure_env () {
     echo "##### DNS validation #####"
     echo
 
+    hosts='bastion api api-int console-openshift-console.apps bootstrap master1 master2 master3'
+
+    if [[ NUMBER_WORKERS -eq 2 ]]; then
+        hosts="$hosts worker1 worker2"
+    fi
+    if [[ NUMBER_WORKERS -eq 3 ]]; then
+        hosts="$hosts worker1 worker2 worker3"
+    fi
+    # more than 3? Who cares.
+
     output=''
-    for host in bastion api api-int console-openshift-console.apps bootstrap master1 master2 master3 worker1 worker2 worker3; do
+    for host in $hosts; do
         ip=$(dig +short ${host}.${CLUSTER_NAME}.${CLUSTER_DOMAIN})
         name="${host}.${CLUSTER_NAME}.${CLUSTER_DOMAIN}" 
         output="$output\n$name $ip"
