@@ -1,18 +1,15 @@
 ---
 
+#
 # Generate a valid openshift-install
+#
 
+# CA only for registry
 - name: Collect data for the install-config.yaml with mirror registry
   when: registry
   block:
 
-    - name: Get the pull secret in a a variable with mirror registry credentials
-      ansible.builtin.shell:
-        cmd: cat /root/registry/pull-secret.json | jq -c .
-      register: pull_secret
-      when: registry
-
-    - name: Get the CA cert in a a variable
+    - name: Get the CA cert into a variable
       ansible.builtin.command:
         cmd: awk '{$1="  "$1}1' /root/CA/CA_cert.pem
       register: ca_cert
@@ -20,31 +17,49 @@
     - name: Show CA content
       debug:
           var: ca_cert
-      tags:
-        - debug
 
 
-- name: Get the pull secret in a a variable
-  ansible.builtin.shell:
-    cmd: cat /root/pull-secret.txt | jq -c .
-  register: pull_secret
+# Pull secret.
+#
+# With registry == /root/registry/pull-secret.json
+# No registry   == /root/pull-secret.txt
+#
+# "when" clause fails because if a task fails or is skipped, 
+# the variable still is registered with a failure or skipped status"
+
+- name: Set pull-secret file - registry
+  ansible.builtin.set_fact:
+    pullfile: /root/registry/pull-secret.json
+  when: registry
+
+- name: Set pull-secret file - NO registry
+  ansible.builtin.set_fact:
+    pullfile: /root/pull-secret.txt
   when: not registry
 
-# - debug:
-#    var: pull_secret
-#  tags:
-#    - debug
+- name: Get the pull secret into a variable
+  ansible.builtin.shell:
+    cmd: cat {{ pullfile }} | jq -c .
+  register: pull_secret
+
+- name: Show pull-secret
+  debug:
+    var: pull_secret
+
+
+# SSH key is collected for all.
 
 - name: Get the SSH public key in a a variable
   ansible.builtin.command:
     cmd: cat /root/.ssh/id_rsa.pub
   register: ssh_public_key
 
-# - debug:
-#    var: ssh_public_key
-#  tags:
-#    - debug
+- name: Show SSH public key
+  debug:
+    var: ssh_public_key
 
+
+# Assemble!
 
 - name: Assemble the install-config.yaml
   ansible.builtin.template:
@@ -58,8 +73,8 @@
 
 # Ignition files
 
-# Checking for existing run. Remove folder to repeat.
-- name: Test the existence of existing ignition files
+# Checking for existing run.
+- name: Test the existence of existing ignition files. REMOVE TO RECREATE.
   ansible.builtin.stat:
     path: /root/{{ cluster_name }}
   register: ignition_files
@@ -84,12 +99,6 @@
         group: root
         mode: '0640'
         remote_src: true
-
-#    - name: Create manifest files
-#      ansible.builtin.shell:
-#        cmd: PATH=$PATH:/root/bin openshift-install --dir {{ cluster_name}} create manifests
-#      args:
-#        chdir: /root/
 
     - name: Create ignition files
       ansible.builtin.shell:
