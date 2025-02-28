@@ -64,6 +64,12 @@
       tags:
         - inst-pxe-rhcos
 
+    - name: Install Proxy server
+      ansible.builtin.import_tasks: tasks/install-proxy.yaml
+      when: proxy
+      tags:
+        - inst-proxy
+
     - name: Install mirror registry
       when: registry
       block:

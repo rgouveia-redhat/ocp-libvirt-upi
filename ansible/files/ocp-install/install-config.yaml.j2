@@ -40,3 +40,9 @@ imageContentSources:
 additionalTrustBundle: |
 {{ ca_cert.stdout }}
 {% endif %}
+{% if proxy %}
+proxy:
+  httpProxy: http://bastion.{{ cluster_name }}.{{ cluster_domain }}:3128
+  httpsProxy: http://bastion.{{ cluster_name }}.{{ cluster_domain }}:3128
+  noProxy: {{ cluster_name }}.{{ cluster_domain }}
+{% endif %}

@@ -126,10 +126,14 @@ validate_defaults () {
     fi
   fi
 
-  if [ "$DISCONNECTED" == "true" ] && [ "$REGISTRY" == "false" ]; then
-    echo "$(date +%T) WARNING: Disconnected requested! Changing registry to true."
-    REGISTRY=true
+  if [ "$DISCONNECTED" == "true" ]; then
+    if [ "$REGISTRY" == "false" ] && [ "$PROXY" == "false" ]; then
+      echo "ERROR: Disconnected requested! Either enable Registry or Proxy to continue."
+      exit -5
+    fi
+    # TODO: Can they both be installed?
   fi
+  # When Connected, I guess the registry may be installed for cache, and proxy can be used although not needed.
 
   if ! ( [[ $NUMBER_WORKERS -eq 0 ]] || [[ $NUMBER_WORKERS -ge 2 ]] ); then
     echo "$(date +%T) ERROR: Allowed number of workers is: 0, 2 or more. (not tested with more than 3)"

@@ -1,0 +1,19 @@
+---
+- name: Install Squid package
+  ansible.builtin.package:
+    name:
+      - squid
+    state: present
+
+- name: Restart and enable squid.service
+  ansible.builtin.systemd:
+    name: squid.service
+    state: started
+    enabled: true
+
+- name: Configure Firewalld
+  ansible.posix.firewalld:
+    service: squid
+    state: enabled
+    permanent: true
+    immediate: true
