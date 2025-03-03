@@ -7,23 +7,33 @@
 #
 # Which Libvirt endpoint to use.
 #
-LIBVIRT_URI='qemu:///system'
+# Default is:
+#LIBVIRT_URI='qemu:///system'
 
 #
-# A free network subnet in Libvirt. A new network will be created for the cluster, and 
+# A free network subnet in Libvirt. A new subnet will be created for the cluster, and 
 # it cannot override an existing one. Check your system to select a free subnet prefix.
 #
-LIBVIRT_NETWORK_PREFIX='192.168.99'
+# Default is next available in 192.168.x.0 in the libvirt networks and in the host.
+#LIBVIRT_NETWORK_PREFIX='192.168.x'
 
 #
 # The path for the storage. It must have enough storage for all the nodes,
 # including temporarly the bootstrap node.
 #
-LIBVIRT_STORAGE_POOL_BASE='/ssd-data'
-
+# Variable is an array of available storage mount points.
+#
+# Default is Hypervisor default = /var/lib/libvirt/images/
+declare -a LIBVIRT_STORAGE_POOL
+LIBVIRT_STORAGE_POOL=(
+    /var/lib/libvirt/images/
+    # /ssd/1 # Add more storage if available.
+    # /ssd/2 # Add more storage if available.
+    # /ssd/3 # Add more storage if available.
+    )
 
 #
-# OpenShift
+# OpenShift Cluster options
 #
 
 #
@@ -31,7 +41,7 @@ LIBVIRT_STORAGE_POOL_BASE='/ssd-data'
 # <hostname>.<CLUSTER_NAME>.<CLUSTER_DOMAIN>
 # The domain does not need to be resolvable outside of the hypervisor host.
 #
-CLUSTER_NAME='ocp'
+CLUSTER_NAME='c41801'
 CLUSTER_DOMAIN='example.com'
 
 #
@@ -39,7 +49,7 @@ CLUSTER_DOMAIN='example.com'
 # The architecture must be supported by the hypervisor.
 # DISCLAIMER: Only x86_64 was tested. If you had success with a different one, please share the feedback.
 #
-CLUSTER_VERSION='4.11.3'
+CLUSTER_VERSION='4.18.1'
 ARCH='x86_64'
 
 #
@@ -51,7 +61,7 @@ PULL_SECRET="$(pwd)/pull-secret.txt"
 #
 # Just an email to be used in the registry mirror configuration.
 #
-PULL_SECRET_EMAIL='me@example.com'
+PULL_SECRET_EMAIL="kubeadmin@${CLUSTER_NAME}.${CLUSTER_DOMAIN}"
 
 
 #
@@ -65,10 +75,27 @@ PULL_SECRET_EMAIL='me@example.com'
 DISCONNECTED=false
 
 #
+# Install mirror registry? If disconnect, it is ignored, and installed anyway.
+#
+REGISTRY=false
+
+#
+# Install a proxy to access the Internet? If true, disconnected will be used.
+#
+PROXY=false
+
+#
 # Should the NFS Server be installed to provide storage for the cluster internal registry?
 # This is a post-install options, and instructions will be in the bastion docs directory.
 #
 REGISTRY_NFS=false
+
+#
+# Number of worker?
+# IMPORTANT: The required resources ARE NOT validated (yet). Do not over provision!!!!!
+# IMPORTANT: The code was NOT tested for number of workers higher than 3.
+#
+NUMBER_WORKERS=2
 
 
 #
@@ -77,23 +104,23 @@ REGISTRY_NFS=false
 
 # Bastion specs
 BASTION_DISK_SIZE=100
-BASTION_CPUS=1
+BASTION_CPUS=2
 BASTION_MEMORY_SIZE=2048
 
 # Bootstrap specs
 BOOTSTRAP_DISK_SIZE=50
 BOOTSTRAP_CPUS=4
-BOOTSTRAP_MEMORY_SIZE=16384
+BOOTSTRAP_MEMORY_SIZE=8192
 
 # Masters specs
 MASTER_DISK_SIZE=50
 MASTER_CPUS=4
-MASTER_MEMORY_SIZE=12288
+MASTER_MEMORY_SIZE=16384
 
 # Workers specs
 WORKER_DISK_SIZE=50
 WORKER_CPUS=2
-WORKER_MEMORY_SIZE=12288
+WORKER_MEMORY_SIZE=6144
 
 
 #
@@ -101,30 +128,21 @@ WORKER_MEMORY_SIZE=12288
 # location of the files rhcos-live-kernel-x86_64, rhcos-live-initramfs.x86_64.img, and rhcos-live-rootfs.x86_64.img
 # that match the CLUSTER_VERSION choosen above.
 #
-#OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.10/4.10.3'
-OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.11/latest'
-
-
-#
-# The bastion host can be installed with one of the following types.
-# Fedora Server 35, CentOS 8, and RHEL 8.5 were tested.
-# You must download the prefered ISO file and save it in a localion that the 'qemu' can access. For example, /var/lib/libvirt/images/ .
-# Please, choose one pair of type and install ISO file:
-#
-
-# For a RHEL bastion host.
-BASTION_INSTALL_TYPE='redhat'
-BASTION_INSTALL_ISO='/var/lib/libvirt/images/rhel-8.8-x86_64-boot.iso'
-
-# For a Fedora Server bastion host.
-#BASTION_INSTALL_TYPE='fedora'
-#BASTION_INSTALL_ISO='/var/lib/libvirt/images/Fedora-Server-dvd-x86_64-34-1.2.iso'
-
+# Examples:
+#   OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/4.18.1'
+#   OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/latest'
+OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/latest'
 
 #
-# The bastion host will act as a authoritative nameserver for CLUSTER_DOMAIN. However, for external names, like registry.redhat.com, 
-# the DNS server must forward the request to another nameserver. If you are at home, your router is a good candidate. If unsure, the
-# Google nameservers are good options (8.8.8.8; 8.8.4.4), or the opendns.org (208.67.222.222 ; 208.67.220.220).
-# If specifying more than one, please separate them with ';'
+# The bastion host was ONLY tested with RHEL.
+# You must download the prefered ISO file and save it in a localion that the 'qemu' can access.
+# For example, /var/lib/libvirt/images/ .
 #
-DNS_FORWARDERS='192.168.1.254'
+
+#
+# RHEL bastion host details.
+# Determine variant value with 'osinfo-query os'
+#
+BASTION_TYPE='redhat'
+BASTION_VARIANT='rhel9.4'
+BASTION_INSTALL_ISO='/var/lib/libvirt/images/rhel-9.4-x86_64-dvd.iso'
