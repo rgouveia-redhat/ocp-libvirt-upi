@@ -27,6 +27,7 @@
         name: podman-registry.service
         state: stopped
         enabled: true
+      ignore_errors: true
     ###
 
     - name: Create a directory for the CA
