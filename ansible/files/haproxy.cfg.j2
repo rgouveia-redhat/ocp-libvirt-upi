@@ -84,6 +84,29 @@ listen machine-config-server-22623
   server master2 master2.{{ cluster_name }}.{{ cluster_domain }}:22623 check inter 1s
   server master3 master3.{{ cluster_name }}.{{ cluster_domain }}:22623 check inter 1s
 
+{% if (number_workers | int) == 0 %}
+{# We have NO workers. Ingress pods are in the masters #}
+
+listen ingress-router-443
+  bind *:443
+  mode tcp
+  balance source
+{% for i in range(1, 4) %}
+  server master{{ i }} master{{ i }}.{{ cluster_name }}.{{ cluster_domain }}:443 check inter 1s
+{% endfor %}
+
+listen ingress-router-80
+  bind *:80
+  mode tcp
+  balance source
+{% for i in range(1, 4) %}
+  server master{{ i }} master{{ i }}.{{ cluster_name }}.{{ cluster_domain }}:80 check inter 1s
+{% endfor %}
+
+
+{% else %}
+{# We have workers with Ingress #}
+
 listen ingress-router-443
   bind *:443
   mode tcp
@@ -99,3 +122,5 @@ listen ingress-router-80
 {% for i in range(1, (number_workers | int) + 1) %}
   server worker{{ i }} worker{{ i }}.{{ cluster_name }}.{{ cluster_domain }}:80 check inter 1s
 {% endfor %}
+
+{% endif %}
