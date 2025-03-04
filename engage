@@ -80,7 +80,9 @@ env)
     ;;
 
 start)
+    . script/ops.sh
     . script/start.sh
+    validate_defaults
     cluster_start
     ;;
 
@@ -90,7 +92,9 @@ stop)
     ;;
 
 destroy)
+    . script/ops.sh
     . script/destroy.sh
+    validate_defaults
     cluster_destroy
     ;;
 
