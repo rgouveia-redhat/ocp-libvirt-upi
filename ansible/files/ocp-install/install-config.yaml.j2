@@ -30,7 +30,7 @@ pullSecret: '{{ pull_secret.stdout }}'
 sshKey: |
   {{ ssh_public_key.stdout }}
 {% if registry %}
-imageContentSources:
+imageDigestSources:
 - mirrors:
   - bastion.{{ cluster_name }}.{{ cluster_domain }}:5000/ocp4/openshift4
   source: quay.io/openshift-release-dev/ocp-release
