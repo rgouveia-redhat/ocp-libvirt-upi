@@ -118,8 +118,9 @@ validate_defaults () {
   if [ "$LIBVIRT_NETWORK_PREFIX" == "" ]; then
     # Check if network file exists and re-use it.
     if [ -f ./.re-run-with-network ]; then
-      echo "$(date +%T) INFO: Previously selected network file exists. Re-using it."
+      echo -n "$(date +%T) INFO: Previously selected network file exists. Re-using it: "
       LIBVIRT_NETWORK_PREFIX=$(cat ./.re-run-with-network)
+      echo $LIBVIRT_NETWORK_PREFIX
     else
       echo "$(date +%T) INFO: Get available subnet..."
       get_available_subnet
