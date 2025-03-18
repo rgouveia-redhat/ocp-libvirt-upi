@@ -58,4 +58,5 @@
       - openssl
       - httpd-tools
       - podman
+      - nmstate
     state: present
