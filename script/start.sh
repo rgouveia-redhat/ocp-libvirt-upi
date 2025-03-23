@@ -34,10 +34,14 @@ cluster_start () {
 
     echo
     echo "Waiting for bastion services to be available..."
+    waiting_for_services="named haproxy dhcpd"
+    if [ "REGISTRY" == "true" ]; then
+        waiting_for_services="$waiting_for_services podman-registry"
+    fi
     waiting_for="all"
     while [ "$waiting_for" != "" ]; do
         waiting_for=''
-        for service in named haproxy dhcpd podman-registry ; do
+        for service in $waiting_for_services ; do
             status=$(ssh -i ssh/id_rsa root@${LIBVIRT_NETWORK_PREFIX}.3 "systemctl is-active ${service}.service")
             if [ "$status" != "active" ]; then
                 waiting_for="$waiting_for $service"
