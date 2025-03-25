@@ -138,7 +138,7 @@ validate_defaults () {
 
   # If not defined
   if [ "$NUMBER_WORKERS" == "" ]; then
-    NUMBER_WORKERS = 2
+    NUMBER_WORKERS=2
   fi
 
   if ! ( [[ $NUMBER_WORKERS -eq 0 ]] || [[ $NUMBER_WORKERS -ge 2 ]] ); then
