@@ -136,6 +136,11 @@ validate_defaults () {
   fi
   # When Connected, I guess the registry may be installed for cache, and proxy can be used although not needed.
 
+  # If not defined
+  if [ "$NUMBER_WORKERS" == "" ]; then
+    NUMBER_WORKERS = 2
+  fi
+
   if ! ( [[ $NUMBER_WORKERS -eq 0 ]] || [[ $NUMBER_WORKERS -ge 2 ]] ); then
     echo "$(date +%T) ERROR: Allowed number of workers is: 0, 2 or more. (not tested with more than 3)"
     exit

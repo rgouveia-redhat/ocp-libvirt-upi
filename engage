@@ -87,7 +87,9 @@ start)
     ;;
 
 stop)
+    . script/ops.sh
     . script/stop.sh
+    validate_defaults
     cluster_stop
     ;;
 
