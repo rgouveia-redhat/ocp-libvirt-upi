@@ -105,3 +105,15 @@
     group: root
     mode: '0600'
     backup: false
+
+
+### Other utils
+
+- name: Add small bash script to refresh ignition files
+  ansible.builtin.template:
+    src: files/bin/update-ignition-files.sh.j2
+    dest: /root/bin/update-ignition-files.sh
+    owner: root
+    group: root
+    mode: '0755'
+    backup: false
