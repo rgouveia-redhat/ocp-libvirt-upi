@@ -47,7 +47,6 @@
   with_items:
     - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/openshift-client-linux-{{ cluster_version }}.tar.gz"
     - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/openshift-install-linux-{{ cluster_version }}.tar.gz"
-    - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/oc-mirror.rhel9.tar.gz"
     - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/release.txt"
 #  when: not cli_install.stat.exists
 
@@ -65,7 +64,33 @@
   with_items:
     - /root/bin/openshift-install-linux-{{ cluster_version }}.tar.gz
     - /root/bin/openshift-client-linux-{{ cluster_version }}.tar.gz
-    - /root/bin/oc-mirror.rhel9.tar.gz
+  #when: not cli_install_bin.stat.exists
+
+
+# Note: Other tools may not exist in all the versions.
+
+- name: Download oc-mirror
+  ansible.builtin.get_url:
+    url: "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/oc-mirror.rhel9.tar.gz"
+    dest: /root/bin
+    owner: root
+    mode: '0640'
+    force: false
+    checksum: sha256:https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/sha256sum.txt
+  ignore_errors: true
+
+# # Checking for openshift-install only.
+# - name: Test existence of client tools binaries
+#   ansible.builtin.stat:
+#     path: /root/bin/openshift-install
+#   register: cli_install_bin
+
+- name: Unarchive client tools
+  ansible.builtin.unarchive:
+    src: "/root/bin/oc-mirror.rhel9.tar.gz"
+    dest: /root/bin
+    remote_src: true
+  ignore_errors: true
   #when: not cli_install_bin.stat.exists
 
 - name: Set oc-mirror attributes
@@ -73,6 +98,8 @@
     path: /root/bin/oc-mirror
     state: file
     mode: '0755'
+  ignore_errors: true
+
 
 ### Add commands to .bash_profile
 
