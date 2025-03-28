@@ -32,11 +32,8 @@ sshKey: |
 {% if registry %}
 imageDigestSources:
 - mirrors:
-  - bastion.{{ cluster_name }}.{{ cluster_domain }}:5000/ocp4/openshift4
-  source: quay.io/openshift-release-dev/ocp-release
-- mirrors:
-  - bastion.{{ cluster_name }}.{{ cluster_domain }}:5000/ocp4/openshift4
-  source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
+  - bastion.{{ cluster_name }}.{{ cluster_domain }}:5000/openshift-release-dev
+  source: quay.io/openshift-release-dev
 additionalTrustBundle: |
 {{ ca_cert.stdout }}
 {% endif %}

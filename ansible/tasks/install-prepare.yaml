@@ -30,11 +30,11 @@
     group: root
     mode: '0755'
 
-# Checking for openshift-install only.
-- name: Test existence of client tools tar.gz files
-  ansible.builtin.stat:
-    path: /root/bin/openshift-install-linux-{{ cluster_version }}.tar.gz
-  register: cli_install
+# # Checking for openshift-install only.
+# - name: Test existence of client tools tar.gz files
+#   ansible.builtin.stat:
+#     path: /root/bin/openshift-install-linux-{{ cluster_version }}.tar.gz
+#   register: cli_install
 
 - name: Download client tools with checksum url (sha256)
   ansible.builtin.get_url:
@@ -47,15 +47,15 @@
   with_items:
     - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/openshift-client-linux-{{ cluster_version }}.tar.gz"
     - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/openshift-install-linux-{{ cluster_version }}.tar.gz"
-    - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/opm-linux-{{ cluster_version }}.tar.gz"
+    - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/oc-mirror.rhel9.tar.gz"
     - "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/release.txt"
-  when: not cli_install.stat.exists
+#  when: not cli_install.stat.exists
 
-# Checking for openshift-install only.
-- name: Test existence of client tools binaries
-  ansible.builtin.stat:
-    path: /root/bin/openshift-install
-  register: cli_install_bin
+# # Checking for openshift-install only.
+# - name: Test existence of client tools binaries
+#   ansible.builtin.stat:
+#     path: /root/bin/openshift-install
+#   register: cli_install_bin
 
 - name: Unarchive client tools
   ansible.builtin.unarchive:
@@ -65,9 +65,14 @@
   with_items:
     - /root/bin/openshift-install-linux-{{ cluster_version }}.tar.gz
     - /root/bin/openshift-client-linux-{{ cluster_version }}.tar.gz
-    - /root/bin/opm-linux-{{ cluster_version }}.tar.gz
-  when: not cli_install_bin.stat.exists
+    - /root/bin/oc-mirror.rhel9.tar.gz
+  #when: not cli_install_bin.stat.exists
 
+- name: Set oc-mirror attributes
+  ansible.builtin.file:
+    path: /root/bin/oc-mirror
+    state: file
+    mode: '0755'
 
 ### Add commands to .bash_profile
 

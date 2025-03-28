@@ -1,0 +1,14 @@
+kind: ImageSetConfiguration
+apiVersion: mirror.openshift.io/v2alpha1
+mirror:
+  platform:
+    architectures:
+      - amd64
+    channels:
+    - name: stable-{{ cluster_version_array[0] }}.{{ cluster_version_array[1] }}
+      minVersion: {{ cluster_version }}
+      maxVersion: {{ cluster_version }}
+      type: ocp
+  additionalImages:
+  - name: registry.redhat.io/ubi9/ubi:latest
+  - name: registry.redhat.io/rhel8/support-tools:latest

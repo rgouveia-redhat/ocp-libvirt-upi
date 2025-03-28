@@ -127,41 +127,52 @@
     return_content: true
   register: output
 
-- name: status=200 and json payload of "{"repositories":[]}" is good!
+- name: Status=200 and json payload of "{"repositories":[]}" is good!
   debug:
     var: output
 
 # Create a pull-secret for the registry:
 # https://docs.openshift.com/container-platform/4.9/installing/installing-mirroring-installation-images.html#installation-adding-registry-pull-secret_installing-mirroring-installation-images
 
-- name: Create a directory for the registry files
+- name: Create the pull secret with the mirror registry credentials
+  ansible.builtin.shell: |
+    /usr/bin/jq . /root/pull-secret.txt | jq --arg myauth $(echo -n 'admin:redhat' | base64 -w0) \
+      '.auths += { "bastion.{{ cluster_name }}.{{ cluster_domain }}:5000": {"auth": $myauth, "email": "{{ pull_secret_email }}" } }' > /root/pull-secret-mirror.json
+  args:
+    executable: /bin/bash
+    creates: /root/pull-secret-mirror.json
+
+- name: Create oc-mirror credentials directory
   ansible.builtin.file:
-    path: /root/registry
+    path: "/root/.docker/"
     state: directory
     owner: root
     group: root
     mode: '0755'
 
-- name: Create script to create the registry pull secret
-  ansible.builtin.template:
-    src: files/registry/create-registry-pull-secret.sh.j2
-    dest: /root/registry/create-registry-pull-secret.sh
+- name: Prepare credentials for oc-mirror
+  ansible.builtin.copy:
+    src: /root/pull-secret-mirror.json
+    dest: /root/.docker/config.json
+    remote_src: yes
     owner: root
     group: root
-    mode: '0755'
-    backup: false
+    mode: '0664'
 
-- name: Run script to create the registry pull secret
-  ansible.builtin.command:
-    cmd: /root/registry/create-registry-pull-secret.sh
-  args:
-    creates: /root/registry/pull-secret.json
 
-- name: Create the mirror registry script
+- name: Set oc-mirror channel var
+  ansible.builtin.set_fact:
+    cluster_version_array: "{{ cluster_version | split('.') }}"
+
+- name: Show cluster version array var
+  debug:
+    var: cluster_version_array
+
+- name: Generate imageset-config.yaml
   ansible.builtin.template:
-    src: files/registry/mirror-registry.sh.j2
-    dest: /root/registry/mirror-registry.sh
+    src: files/registry/imageset-config.yaml.j2
+    dest: /root/imageset-config.yaml
     owner: root
     group: root
-    mode: '0755'
+    mode: '0644'
     backup: false

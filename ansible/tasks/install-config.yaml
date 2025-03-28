@@ -21,7 +21,7 @@
 
 # Pull secret.
 #
-# With registry == /root/registry/pull-secret.json
+# With registry == /root/pull-secret-mirror.json
 # No registry   == /root/pull-secret.txt
 #
 # "when" clause fails because if a task fails or is skipped, 
@@ -29,7 +29,7 @@
 
 - name: Set pull-secret file - registry
   ansible.builtin.set_fact:
-    pullfile: /root/registry/pull-secret.json
+    pullfile: /root/pull-secret-mirror.json
   when: registry
 
 - name: Set pull-secret file - NO registry
