@@ -3,3 +3,4 @@ openshift-install --dir {{ cluster_name }} wait-for install-complete
 oc get csr -o name | xargs oc adm certificate approve
 oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' | xargs oc adm certificate approve
 watch "oc get clusterversion ; oc get co ; oc get nodes ; oc get csr"
+oc-mirror --v2 -c imageset-config.yaml --workspace file:///root/oc-mirror/ docker://bastion.{{ cluster_name }}.{{ cluster_domain }}:5000
