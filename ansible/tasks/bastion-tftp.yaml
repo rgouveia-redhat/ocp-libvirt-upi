@@ -75,12 +75,34 @@
     patterns: '01-*'
   register: to_remove
 
-- name: Remove links
-  ansible.builtin.file:
-    path: "{{ item.path }}"
-    state: absent
-  with_items: "{{ to_remove.files }}"
+- name: Remove links and reset dhcp leases
   when: to_remove.matched > 0
+  block:
+
+    - name: Remove links
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ to_remove.files }}"
+
+    - name: Stop dhcpd service
+      ansible.builtin.systemd_service:
+        name: dhcpd.service
+        state: stopped
+
+    - name: Reset dhcp leases file
+      ansible.builtin.copy:
+        dest: /var/lib/dhcpd/dhcpd.leases
+        content: ''
+        owner: dhcpd
+        group: dhcpd
+        mode: '0644'
+        force: true
+
+    - name: Start dhcpd service
+      ansible.builtin.systemd_service:
+        name: dhcpd.service
+        state: started
 
 
 - name: Create a symbolic link for bootstrap mac address
