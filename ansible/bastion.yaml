@@ -2,11 +2,12 @@
 
 - name: Bastion configuration tasks
   hosts: bastion
-
+  handlers:
+    - name: Define handlers
+      ansible.builtin.import_tasks: handlers/main.yaml
   vars_files:
     - vars/common.yaml
     - ~/.rh.yaml
-
   tasks:
 
     ### bastion host tasks

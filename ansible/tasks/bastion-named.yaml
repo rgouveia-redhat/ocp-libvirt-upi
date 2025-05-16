@@ -11,6 +11,8 @@
     mode: '0740'
     backup: false
     validate: /usr/sbin/named-checkconf %s
+  notify:
+    - Restart named
 
 - name: Configure dns zone
   ansible.builtin.template:
@@ -21,6 +23,8 @@
     mode: '0740'
     backup: false
     validate: /usr/sbin/named-checkzone "{{ cluster_domain }}" %s
+  notify:
+    - Restart named
 
 - name: Configure dns reverse
   ansible.builtin.template:
@@ -31,6 +35,8 @@
     mode: '0740'
     backup: false
     validate: /usr/sbin/named-checkzone "{{ network_reverse }}.in-addr.arpa" %s
+  notify:
+    - Restart named
 
 - name: Restart and enable named.service
   ansible.builtin.systemd:

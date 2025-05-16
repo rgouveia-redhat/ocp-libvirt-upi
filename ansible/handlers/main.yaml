@@ -1,0 +1,36 @@
+---
+
+- name: Restart crond
+  ansible.builtin.systemd_service:
+    name: crond.service
+    state: restarted
+
+- name: Restart httpd
+  ansible.builtin.systemd_service:
+    name: httpd.service
+    state: restarted
+
+- name: Restart sshd
+  ansible.builtin.systemd_service:
+    name: sshd.service
+    state: restarted
+
+- name: Restart postfix
+  ansible.builtin.systemd_service:
+    name: postfix.service
+    state: restarted
+
+- name: Restart nfs
+  ansible.builtin.systemd_service:
+    name: nfs.service
+    state: restarted
+
+- name: Restart haproxy
+  ansible.builtin.systemd_service:
+    name: haproxy.service
+    state: restarted
+
+- name: Restart named
+  ansible.builtin.systemd_service:
+    name: named.service
+    state: restarted
