@@ -85,8 +85,8 @@ cluster_destroy () {
         pool_name=$(echo $pool | sed 's/\//-/g')
         sudo virsh pool-destroy --pool ${CLUSTER_NAME}-${pool_name}
         sudo virsh pool-undefine --pool ${CLUSTER_NAME}-${pool_name}
+        sudo rmdir ${pool}/${CLUSTER_NAME}
     done
-    sudo rmdir ${pool}/?/${CLUSTER_NAME}
 
     echo "Deleting cluster network..."
     sudo virsh net-destroy --network ${CLUSTER_NAME}
