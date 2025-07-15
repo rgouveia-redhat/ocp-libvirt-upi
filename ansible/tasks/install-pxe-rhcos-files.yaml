@@ -1,9 +1,24 @@
 ---
 
+# With version 4.19 the file changed its name
+# From: rhcos-live-kernel-x86_64
+# To: rhcos-live-kernel.x86_64
+
+- name: Set live-kernel filename if version is not 4.19
+  ansible.builtin.set_fact:
+    livekernel_filename: "rhcos-live-kernel-x86_64"
+  when: cluster_version is not ansible.builtin.match("4.19.*")
+
+- name: Set live-kernel filename if version is 4.19
+  ansible.builtin.set_fact:
+    livekernel_filename: "rhcos-live-kernel.x86_64"
+  when: cluster_version is ansible.builtin.match("4.19.*")
+
+
 # Checking for live_kernel only.
 - name: Test existence of pxe boot files
   ansible.builtin.stat:
-    path: /var/www/html/rhcos-live-kernel-x86_64
+    path: /var/www/html/{{ livekernel_filename }}
   register: live_kernel
 
 #- debug:
@@ -19,7 +34,19 @@
     mode: '0664'
     checksum: sha256:{{ openshift_mirror_base }}/sha256sum.txt
   with_items:
-    - "{{ openshift_mirror_base }}/rhcos-live-kernel-x86_64"
+    - "{{ openshift_mirror_base }}/{{ livekernel_filename }}"
     - "{{ openshift_mirror_base }}/rhcos-live-initramfs.x86_64.img"
     - "{{ openshift_mirror_base }}/rhcos-live-rootfs.x86_64.img"
   when: not live_kernel.stat.exists
+
+
+# For now, not knowing what the default will be, we just make a copy
+# to the name the templates are expecting.
+- name: Copy live-kernel from the new name to the old name
+  ansible.builtin.copy:
+    src: "/var/www/html/{{ livekernel_filename }}"
+    dest: "/var/www/html/rhcos-live-kernel-x86_64"
+    remote_src: true
+    owner: apache
+    group: apache
+    mode: '0664'
