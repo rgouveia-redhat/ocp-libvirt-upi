@@ -1,0 +1,175 @@
+Virtual Baremetal IPI installation using VirtualBMC
+Prepping the Hypervisor
+* Libvirtd is installed and enabled/started
+* Create two libvirt networks:
+   * Connected “baremetal” / 192.168.10.0/24
+   * Disconnected “provisioning” / “no config”
+
+
+(Baremetal network details / Acting as DHCP and DNS)
+
+
+<network connections="1">
+  <name>baremetal</name>
+  <uuid>36d253df-b392-4f6f-bc46-7a5228bedb37</uuid>
+  <forward mode="nat">
+    <nat>
+      <port start="1024" end="65535"/>
+    </nat>
+  </forward>
+  <bridge name="virbr8" stp="on" delay="0"/>
+  <mac address="52:54:00:6f:ac:44"/>
+  <domain name="cluster1.bm-ipi.local" localOnly="yes"/>
+  <dns>
+    <forwarder domain="apps.cluster1.bm-ipi.local" addr="127.0.0.1"/>
+    <host ip="192.168.10.11">
+      <hostname>cp1</hostname>
+    </host>
+    <host ip="192.168.10.12">
+      <hostname>cp2</hostname>
+    </host>
+    <host ip="192.168.10.13">
+      <hostname>cp3</hostname>
+    </host>
+    <host ip="192.168.10.4">
+      <hostname>api</hostname>
+      <hostname>api-int</hostname>
+    </host>
+    <host ip="192.168.10.5">
+      <hostname>*.apps</hostname>
+    </host>
+  </dns>
+  <ip address="192.168.10.1" netmask="255.255.255.0">
+    <dhcp>
+      <range start="192.168.10.100" end="192.168.10.254"/>
+      <host mac="52:54:00:57:1f:3c" name="cp1" ip="192.168.10.11">
+        <lease expiry="60" unit="minutes"/>
+      </host>
+      <host mac="52:54:00:20:67:d5" name="cp2" ip="192.168.10.12">
+        <lease expiry="60" unit="minutes"/>
+      </host>
+      <host mac="52:54:00:44:45:58" name="cp3" ip="192.168.10.13">
+        <lease expiry="60" unit="minutes"/>
+      </host>
+    </dhcp>
+  </ip>
+</network>
+
+
+* Install virtualbmc (dnf/yum/source)
+* Create the 3 VMs for the hosts
+   * 1st NIC MUST be in the “provisioning” network:
+      * (I was not able to make IPMI boot from the 2nd NIC)
+   * 2nd NIC is in the “baremetal” network.
+* Execute:
+
+
+# Allow traffic from the virtual network
+sudo firewall-cmd --zone=libvirt --add-port=1025-65535/udp --permanent
+sudo firewall-cmd --reload
+sudo firewall-cmd --zone=libvirt --list-all
+
+
+# Create virtual hosts on the virtual network gateway
+vbmc add --address 192.168.10.1 --port 6001 bm-host1
+vbmc add --address 192.168.10.1 --port 6002 bm-host2
+vbmc add --address 192.168.10.1 --port 6003 bm-host3
+
+
+# Start the virtual BMCs
+vbmc start bm-host1
+vbmc start bm-host2
+vbmc start bm-host3
+
+
+# Check vbmc status
+vbmc list
+
+
+# Check hosts status
+ipmitool -I lanplus -U admin -P password -H 192.168.10.1 -p 6001 power status
+ipmitool -I lanplus -U admin -P password -H 192.168.10.1 -p 6002 power status
+ipmitool -I lanplus -U admin -P password -H 192.168.10.1 -p 6003 power status
+
+
+
+
+* Create the VM for the provisioner as documented in: 
+   * https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/installing_on_bare_metal/installer-provisioned-infrastructure#ipi-install-overview
+* Prepare install-config.yaml
+
+
+[kni@provisioner ~]$ cat install-config.yaml
+apiVersion: v1
+baseDomain: bm-ipi.local
+metadata:
+  name: cluster1
+networking:
+  machineNetwork:
+  - cidr: 192.168.10.0/24
+  networkType: OVNKubernetes
+compute:
+- name: worker
+  replicas: 0 
+controlPlane:
+  name: master
+  replicas: 3
+  platform:
+    baremetal: {}
+platform:
+  baremetal:
+    bootstrapOSImage: <MUST-UPDATE>
+
+    apiVIPs:
+      - 192.168.10.4
+    ingressVIPs:
+      - 192.168.10.5
+
+    provisioningNetwork: Managed
+
+    bootstrapExternalStaticIP: 192.168.10.99
+    bootstrapExternalStaticGateway: 192.168.10.1
+    bootstrapExternalStaticDNS: 192.168.10.1
+
+    hosts:
+      - name: cp1
+        role: master
+        bmc:
+          address: ipmi://192.168.10.1:6001
+          username: admin
+          password: password
+          disableCertificateVerification: True
+        bootMACAddress: 52:54:00:d3:10:f3
+        rootDeviceHints:
+         deviceName: /dev/vda
+      - name: cp2
+        role: master
+        bmc:
+          address: ipmi://192.168.10.1:6002
+          username: admin
+          password: password
+          disableCertificateVerification: True
+        bootMACAddress: 52:54:00:81:e5:12
+        rootDeviceHints:
+         deviceName: /dev/vda
+      - name: cp3
+        role: master
+        bmc:
+          address: ipmi://192.168.10.1:6003
+          username: admin
+          password: password
+          disableCertificateVerification: True
+        bootMACAddress: 52:54:00:9f:b7:8b
+        rootDeviceHints:
+         deviceName: /dev/vda
+pullsecret: '[ADD]'
+sshKey: '[ADD]'
+
+
+* Create and observe the magic:
+
+rm -rf ~/clusterconfigs
+mkdir -p ~/clusterconfigs
+cp install-config.yaml ~/clusterconfigs
+
+openshift-baremetal-install --dir ~/clusterconfigs --log-level debug create cluster
