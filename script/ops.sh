@@ -216,7 +216,7 @@ start_abi_nodes () {
           --boot cdrom,hd,menu=on \
           --os-variant $BASTION_VARIANT \
           --cdrom /var/lib/libvirt/images/agent.x86_64.iso \
-          --noautoconsole --wait=-1
+          --noautoconsole
     done
 
     # Start worker vms.
@@ -229,7 +229,7 @@ start_abi_nodes () {
           --boot cdrom,hd,menu=on \
           --os-variant $BASTION_VARIANT \
           --cdrom /var/lib/libvirt/images/agent.x86_64.iso \
-          --noautoconsole --wait=-1
+          --noautoconsole
     done
 }
 
