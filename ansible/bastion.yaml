@@ -136,7 +136,14 @@
 
         - name: Copy ISO file to the hypervisor host 
           ansible.builtin.shell:
-            cmd: ../bin/copy-abi-image-to-libvirt.sh
+            cmd: ./bin/copy-abi-image-to-libvirt.sh
           args:
             executable: /bin/bash
+          args:
+            chdir: ../
           delegate_to: localhost
+          register: copy_iso
+
+        - name: Copy ISO file output
+          ansible.builtin.debug:
+            var: copy_iso
