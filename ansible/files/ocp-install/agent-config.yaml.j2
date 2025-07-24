@@ -1,0 +1,40 @@
+apiVersion: v1alpha1
+kind: AgentConfig
+metadata:
+  name: {{ cluster_name }}
+rendezvousIP: {{ network_prefix }}.10
+hosts:
+  - hostname: master1.{{ cluster_name }}.{{ cluster_domain }}
+    role: master
+    interfaces:
+      - name: enp1s0
+        macAddress: {{ mac_master1 }}
+  - hostname: master2.{{ cluster_name }}.{{ cluster_domain }}
+    role: master
+    interfaces:
+      - name: enp1s0
+        macAddress: {{ mac_master2 }}
+  - hostname: master3.{{ cluster_name }}.{{ cluster_domain }}
+    role: master
+    interfaces:
+      - name: enp1s0
+        macAddress: {{ mac_master3 }}
+{% if (number_workers | int) >= 2 %}
+  - hostname: worker1.{{ cluster_name }}.{{ cluster_domain }}
+    role: worker
+    interfaces:
+      - name: enp1s0
+        macAddress: {{ mac_worker1 }}
+  - hostname: worker2.{{ cluster_name }}.{{ cluster_domain }}
+    role: worker
+    interfaces:
+      - name: enp1s0
+        macAddress: {{ mac_worker2 }}
+{% endif %}
+{% if (number_workers | int) == 3 %}
+  - hostname: worker3.{{ cluster_name }}.{{ cluster_domain }}
+    role: worker
+    interfaces:
+      - name: enp1s0
+        macAddress: {{ mac_worker3 }}
+{% endif %}

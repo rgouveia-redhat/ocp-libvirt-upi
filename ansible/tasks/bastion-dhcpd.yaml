@@ -11,6 +11,15 @@
     mode: '0640'
     backup: false
 
+- name: Make sure there are no leases from old macs
+  ansible.builtin.copy:
+    src: /var/lib/dhcpd/dhcpd.leases~
+    dest: /var/lib/dhcpd/dhcpd.leases
+    owner: dhcpd
+    group: dhcpd
+    mode: '0644'
+    remote_src: true
+
 - name: Restart and enable dhcpd.service
   ansible.builtin.systemd:
     name: dhcpd.service

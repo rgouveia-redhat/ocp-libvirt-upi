@@ -70,22 +70,29 @@
     mode: '0644'
     backup: false
 
+- name: Copy agent-config.yaml to bastion
+  ansible.builtin.template:
+    src: files/ocp-install/agent-config.yaml.j2
+    dest: /root/agent-config.yaml
+    owner: root
+    group: root
+    mode: '0644'
+    backup: false
+  when: installation_method == 'ABI'
 
-# Ignition files
 
-# Checking for existing run.
-- name: Test the existence of existing ignition files. REMOVE TO RECREATE.
+- name: Test the existence of an existing install-dir. REMOVE TO RECREATE!!!
   ansible.builtin.stat:
-    path: /root/{{ cluster_name }}
-  register: ignition_files
+    path: /root/install-dir
+  register: check_dir
 
-- name: Generate and prepare ignition files
-  when: not ignition_files.stat.exists
+- name: Prepare install-dir and config files
+  when: not check_dir.stat.exists
   block:
 
-    - name: Create folder for cluster
+    - name: Create install-dir
       ansible.builtin.file:
-        path: /root/{{ cluster_name }}
+        path: /root/install-dir
         state: directory
         owner: root
         group: root
@@ -94,15 +101,30 @@
     - name: Copy install-config.yaml to install-dir
       ansible.builtin.copy:
         src: /root/install-config.yaml
-        dest: /root/{{ cluster_name }}/install-config.yaml
+        dest: /root/install-dir/install-config.yaml
         owner: root
         group: root
         mode: '0640'
         remote_src: true
 
+    - name: Copy agent-config.yaml to install-dir
+      ansible.builtin.copy:
+        src: /root/agent-config.yaml
+        dest: /root/install-dir/agent-config.yaml
+        owner: root
+        group: root
+        mode: '0640'
+        remote_src: true
+      when: installation_method == 'ABI'
+
+
+- name: Prepare install-dir and config files
+  when: not check_dir.stat.exists and installation_method == 'UPI'
+  block:
+
     - name: Create ignition files
       ansible.builtin.shell:
-        cmd: PATH=$PATH:/root/bin openshift-install --dir {{ cluster_name }} create ignition-configs
+        cmd: PATH=$PATH:/root/bin openshift-install --dir install-dir create ignition-configs
       args:
         chdir: /root/
 

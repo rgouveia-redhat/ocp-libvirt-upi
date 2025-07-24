@@ -13,8 +13,14 @@ $TTL	30 ; ONLY THIS SHORT FOR TESTING, changes are cached this long
 $ORIGIN {{ network_reverse }}.IN-ADDR.ARPA.
 
 3     IN    PTR    bastion.{{ cluster_name }}.{{ cluster_domain }}.
+
+{% if installation_platform == 'baremetal' %}
+4     IN    PTR    api.{{ cluster_name }}.{{ cluster_domain }}.
+4     IN    PTR    api-int.{{ cluster_name }}.{{ cluster_domain }}.
+{% else %}
 3     IN    PTR    api.{{ cluster_name }}.{{ cluster_domain }}.
 3     IN    PTR    api-int.{{ cluster_name }}.{{ cluster_domain }}.
+{% endif %}
 
 9     IN    PTR    bootstrap.{{ cluster_name }}.{{ cluster_domain }}.
 

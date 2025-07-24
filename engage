@@ -61,6 +61,12 @@ my_encryption_password
     . script/configure.sh
     create_infra
     configure_bastion
+
+    if [ "$INSTALLATION_METHOD" == 'ABI' ]; then
+        echo "Starting ABI nodes..."
+        start_abi_nodes
+    fi
+
     show_help_install
     ;;
 
@@ -68,7 +74,14 @@ my_encryption_password
 ansible-only)
     . script/ops.sh
     . script/configure.sh
+    validate_defaults
     configure_bastion
+
+    if [ "$INSTALLATION_METHOD" == "ABI" ]; then
+        echo "Starting ABI nodes..."
+        start_abi_nodes
+    fi
+
     show_help_install
     ;;
 
@@ -98,6 +111,18 @@ destroy)
     . script/destroy.sh
     validate_defaults
     cluster_destroy
+    ;;
+
+abi-reset)
+    if [ "$INSTALLATION_METHOD" != "ABI" ]; then
+        echo "Installation type is not 'ABI'. Exiting!"
+        exit 1
+    fi
+
+    . script/ops.sh
+    validate_defaults
+    stop_abi_nodes
+    start_abi_nodes
     ;;
 
 *|'')

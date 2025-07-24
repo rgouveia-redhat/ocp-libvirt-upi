@@ -31,11 +31,13 @@ subnet {{ network_prefix }}.0 netmask 255.255.255.0 {
     filename "pxelinux.0";
 }
 
+{% if mac_bootstrap is defined %}
 host bootstrap {
     option host-name "bootstrap.{{ cluster_name }}.{{ cluster_domain }}";
     hardware ethernet {{ mac_bootstrap }};
     fixed-address {{ network_prefix }}.9;
 }
+{% endif %}
 
 host master1 {
     option host-name "master1.{{ cluster_name }}.{{ cluster_domain }}";

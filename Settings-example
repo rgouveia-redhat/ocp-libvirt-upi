@@ -33,6 +33,20 @@ LIBVIRT_STORAGE_POOL=(
     )
 
 #
+# Installation method: UPI, ABI.
+# Default = UPI
+#
+INSTALLATION_METHOD='ABI'
+
+# Platform: none, baremetal.
+#
+# none = External LB.
+# baremetal = API/API-INT managed by control-plane.
+#
+INSTALLATION_PLATFORM='none'
+
+
+#
 # OpenShift Cluster options
 #
 
@@ -41,15 +55,15 @@ LIBVIRT_STORAGE_POOL=(
 # <hostname>.<CLUSTER_NAME>.<CLUSTER_DOMAIN>
 # The domain does not need to be resolvable outside of the hypervisor host.
 #
-CLUSTER_NAME='c41801'
-CLUSTER_DOMAIN='example.com'
+CLUSTER_NAME='c41903'
+CLUSTER_DOMAIN='ocp.local'
 
 #
 # The version and architecture to be installed.
 # The architecture must be supported by the hypervisor.
 # DISCLAIMER: Only x86_64 was tested. If you had success with a different one, please share the feedback.
 #
-CLUSTER_VERSION='4.18.1'
+CLUSTER_VERSION='4.19.3'
 ARCH='x86_64'
 
 #
@@ -101,6 +115,10 @@ NUMBER_WORKERS=2
 #
 # OpenShift Node Specs
 #
+# ABI: Minimum specs are: Disks=120G / RAM=8192 MiB for workers.
+# UPI: Minimum memory known to work for workers is 6144 Mb.
+# SNO: Minimum CPUs is 8.
+#
 
 # Bastion specs
 BASTION_DISK_SIZE=100
@@ -113,14 +131,14 @@ BOOTSTRAP_CPUS=4
 BOOTSTRAP_MEMORY_SIZE=8192
 
 # Masters specs
-MASTER_DISK_SIZE=50
+MASTER_DISK_SIZE=120
 MASTER_CPUS=4
 MASTER_MEMORY_SIZE=16384
 
 # Workers specs
-WORKER_DISK_SIZE=50
+WORKER_DISK_SIZE=120
 WORKER_CPUS=2
-WORKER_MEMORY_SIZE=6144
+WORKER_MEMORY_SIZE=8192
 
 
 #
@@ -129,9 +147,9 @@ WORKER_MEMORY_SIZE=6144
 # that match the CLUSTER_VERSION choosen above.
 #
 # Examples:
-#   OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/4.18.1'
-#   OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/latest'
-OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/latest'
+#   OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.19/4.19.3'
+#   OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.19/latest'
+OPENSHIFT_MIRROR_BASE='https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.19/latest'
 
 #
 # The bastion host was ONLY tested with RHEL.

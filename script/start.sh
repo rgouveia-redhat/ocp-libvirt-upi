@@ -34,10 +34,17 @@ cluster_start () {
 
     echo
     echo "Waiting for bastion services to be available..."
-    waiting_for_services="named haproxy dhcpd"
-    if [ "REGISTRY" == "true" ]; then
+    waiting_for_services="named dhcpd"
+    if [ "$REGISTRY" == "true" ]; then
         waiting_for_services="$waiting_for_services podman-registry"
     fi
+    if [ "$PROXY" == "true" ]; then
+        waiting_for_services="$waiting_for_services squid"
+    fi
+    if [ "$INSTALLATION_PLATFORM" != "baremetal" ]; then
+        waiting_for_services="$waiting_for_services haproxy"
+    fi
+    echo "Waiting for: $waiting_for_services"
     waiting_for="all"
     while [ "$waiting_for" != "" ]; do
         waiting_for=''

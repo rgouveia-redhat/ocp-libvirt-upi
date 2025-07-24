@@ -160,6 +160,80 @@ create_ssh_key () {
     fi
 }
 
+stop_abi_nodes () {
+
+    echo
+    echo "Stopping nodes..."
+
+    for i in $(seq 1 3) ; do
+        sudo virsh shutdown --domain ${CLUSTER_NAME}-master${i}
+    done
+
+    for i in $(seq 1 ${NUMBER_WORKERS}); do
+        sudo virsh shutdown --domain ${CLUSTER_NAME}-worker${i}
+    done
+
+    echo -n "Waiting for nodes to shutdown..."
+    while [ "$(sudo virsh list --name | grep ${CLUSTER_NAME}- | grep -v ${CLUSTER_NAME}-bastion)" != "" ]; do
+        echo -n "."
+        sleep 2
+    done
+    echo
+}
+
+start_abi_nodes () {
+
+    echo "Starting dependencies..."
+    sudo virsh start --domain ${CLUSTER_NAME}-bastion
+
+    echo -n "Waiting for bastion to be available..."
+    ready=0
+    while [ $ready -eq 0 ]; do
+
+        ssh -q \
+            -o BatchMode=yes \
+            -o ConnectTimeout=10 \
+            -o UserKnownHostsFile=/dev/null \
+            -o StrictHostKeyChecking=no \
+            -i ssh/id_rsa root@${LIBVIRT_NETWORK_PREFIX}.3 exit
+
+        if [ $? -eq 0 ]; then
+            ready=1
+        else
+            echo -n "."
+            sleep 2
+        fi
+    done
+    echo
+
+    # Start master vms.
+    for i in {1..3}; do
+
+      echo "Starting master${i}..."
+
+      sudo nice -n 19 virt-install \
+          --reinstall ${CLUSTER_NAME}-master${i} \
+          --boot cdrom,hd,menu=on \
+          --os-variant $BASTION_VARIANT \
+          --cdrom /var/lib/libvirt/images/agent.x86_64.iso \
+          --noautoconsole
+    done
+
+    # Start worker vms.
+    for i in $(seq 1 ${NUMBER_WORKERS}); do
+
+      echo "Starting worker${i}..."
+
+      sudo nice -n 19 virt-install \
+          --reinstall ${CLUSTER_NAME}-worker${i} \
+          --boot cdrom,hd,menu=on \
+          --os-variant $BASTION_VARIANT \
+          --cdrom /var/lib/libvirt/images/agent.x86_64.iso \
+          --noautoconsole
+    done
+}
+
+
 show_help() {
 
     echo "
@@ -196,25 +270,35 @@ show_help_install () {
 
 ### In the bastion host: ###
 
+## UPI
+
 - To start the installation, boot all the nodes and select the role assigned in the PXE menu.
   You must select the role option to load the ignition file. After that, by default, the 
   nodes boot from the local disk.
 
 - To keep track of the installation, execute:
-  openshift-install --dir ${CLUSTER_NAME} wait-for bootstrap-complete
+  openshift-install --dir install-dir wait-for bootstrap-complete
 
   And after that:
-  openshift-install --dir ${CLUSTER_NAME} wait-for install-complete
+  openshift-install --dir install-dir wait-for install-complete
 
 - To keep track of Pending certificates, execute:
   oc get csr -o name | xargs oc adm certificate approve
   oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{\"\\n\"}}{{end}}{{end}}' | xargs oc adm certificate approve
 
+
+## ABI
+
+- To keep track of the installation, execute:
+  openshift-install --dir install-dir agent wait-for bootstrap-complete
+
+  And after that:
+  openshift-install --dir install-dir agent wait-for install-complete
+
+
+## All
+
 - To see the evolution of the installation, execute:
   watch \"oc get clusterversion ; oc get co ; oc get nodes ; oc get csr\"
     "
-
-# TODO
-#$ oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"storage":{"pvc":{"claim": ""}}}}'
-#$ oc patch configs.imageregistry.operator.openshift.io cluster --type merge --patch '{"spec":{"managementState":"Managed"}}'
 }

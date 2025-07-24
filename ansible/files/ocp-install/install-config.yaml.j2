@@ -1,19 +1,23 @@
 apiVersion: v1
 baseDomain: {{ cluster_domain }}
+
 compute:
 - architecture: amd64
   hyperthreading: Enabled
   name: worker
   platform: {}
   replicas: {{ number_workers }}
+
 controlPlane:
   architecture: amd64
   hyperthreading: Enabled
   name: master
   platform: {}
   replicas: 3
+
 metadata:
   name: {{ cluster_name }}
+
 networking:
   clusterNetwork:
   - cidr: 10.128.0.0/14
@@ -23,12 +27,23 @@ networking:
   networkType: OVNKubernetes
   serviceNetwork:
   - 172.30.0.0/16
+
 platform:
+{% if installation_platform == 'baremetal' %}
+  baremetal:
+    apiVIPs:
+    - {{ network_prefix }}.4
+    ingressVIPs:
+    - {{ network_prefix }}.5
+{% else %}
   none: {}
+{% endif %}
+
 fips: false
 pullSecret: '{{ pull_secret.stdout }}'
 sshKey: |
   {{ ssh_public_key.stdout }}
+
 {% if registry %}
 imageDigestSources:
 - mirrors:
@@ -40,6 +55,7 @@ imageDigestSources:
 additionalTrustBundle: |
 {{ ca_cert.stdout }}
 {% endif %}
+
 {% if proxy %}
 proxy:
   httpProxy: http://bastion.{{ cluster_name }}.{{ cluster_domain }}:3128

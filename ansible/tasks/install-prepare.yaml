@@ -101,7 +101,26 @@
   ignore_errors: true
 
 
-### Add commands to .bash_profile
+### Add parameters to .bash_profile
+
+- name: Add cluter version env to .bash_profile
+  ansible.builtin.lineinfile:
+    path: /root/.bash_profile
+    regexp: '^export CLUSTER_VERSION=.*'
+    line: 'export CLUSTER_VERSION={{ cluster_version }}'
+
+- name: Add cluter name env to .bash_profile
+  ansible.builtin.lineinfile:
+    path: /root/.bash_profile
+    regexp: '^export CLUSTER_NAME=.*'
+    line: 'export CLUSTER_NAME={{ cluster_name }}'
+
+- name: Add cluter domain env to .bash_profile
+  ansible.builtin.lineinfile:
+    path: /root/.bash_profile
+    regexp: '^export CLUSTER_DOMAIN=.*'
+    line: 'export CLUSTER_DOMAIN={{ cluster_domain }}'
+
 
 - name: Add oc completion commands in .bash_profile
   ansible.builtin.lineinfile:
@@ -118,8 +137,8 @@
 - name: Add KUBECONFIG to .bash_profile
   ansible.builtin.lineinfile:
     path: /root/.bash_profile
-    regexp: '^export KUBECONFIG=/root/{{ cluster_name }}/auth/kubeconfig'
-    line: 'export KUBECONFIG=/root/{{ cluster_name }}/auth/kubeconfig'
+    regexp: '^export KUBECONFIG=/root/install-dir/auth/kubeconfig'
+    line: 'export KUBECONFIG=/root/install-dir/auth/kubeconfig'
 
 
 ### Add common commands to .bash_history
@@ -144,3 +163,13 @@
     group: root
     mode: '0755'
     backup: false
+
+- name: Add small bash script to deploy internal registry
+  ansible.builtin.copy:
+    src: files/bin/deploy-internal-registry-storage.sh
+    dest: /root/bin/
+    owner: root
+    group: root
+    mode: '0755'
+    backup: false
+  when: registry_nfs

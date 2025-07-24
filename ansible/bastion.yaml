@@ -1,5 +1,4 @@
 ---
-
 - name: Bastion configuration tasks
   hosts: bastion
   handlers:
@@ -29,6 +28,7 @@
 
     - name: Configure bastion tftp/pxe service
       ansible.builtin.import_tasks: tasks/bastion-tftp.yaml
+      when: installation_method == 'UPI'
       tags:
         - tftp
 
@@ -39,6 +39,7 @@
 
     - name: Configure bastion haproxy service
       ansible.builtin.import_tasks: tasks/bastion-haproxy.yaml
+      when: installation_platform != 'baremetal'
       tags:
         - haproxy
 
@@ -62,6 +63,7 @@
 
     - name: Install PXE RHCOS boot files
       ansible.builtin.import_tasks: tasks/install-pxe-rhcos-files.yaml
+      when: installation_method == 'UPI'
       tags:
         - inst-pxe-rhcos
 
@@ -111,6 +113,30 @@
           register: my_output             # <- Registers the command output.
           changed_when: my_output.rc != 0 # <- Uses the return code to define when the task has changed.
 
-        - name: Mirror sync output
-          ansible.builtin.debug:
-            var: my_output
+        # - name: Mirror sync output
+        #   ansible.builtin.debug:
+        #     var: my_output
+
+
+    # ABI ISO File. This can only run after the mirror creation.
+    - name: Test the existence of an existing ISO file. REMOVE TO RECREATE!!!
+      ansible.builtin.stat:
+        path: /root/install-dir/agent.x86_64.iso
+      register: check_iso
+
+    - name: Prepare ABI ISO for installation
+      when: not check_iso.stat.exists and installation_method == 'ABI'
+      block:
+
+        - name: Create ISO file
+          ansible.builtin.shell:
+            cmd: PATH=$PATH:/root/bin openshift-install --dir install-dir agent create image
+          args:
+            chdir: /root/
+
+        - name: Copy ISO file to the hypervisor host 
+          ansible.builtin.shell:
+            cmd: ../bin/copy-abi-image-to-libvirt.sh
+          args:
+            executable: /bin/bash
+          delegate_to: localhost

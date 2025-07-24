@@ -17,9 +17,16 @@ ns1		    A	127.0.0.1
 $ORIGIN {{ cluster_name }}.{{ cluster_domain }}.
 
 bastion		IN A	{{ network_prefix }}.3
+
+{% if installation_platform == 'baremetal' %}
+api         IN A 	{{ network_prefix }}.4
+api-int		IN A 	{{ network_prefix }}.4
+*.apps		IN A 	{{ network_prefix }}.5
+{% else %}
 api         IN A 	{{ network_prefix }}.3
 api-int		IN A 	{{ network_prefix }}.3
 *.apps		IN A 	{{ network_prefix }}.3
+{% endif %}
 
 bootstrap	IN A 	{{ network_prefix }}.9
 

@@ -90,15 +90,6 @@
         name: dhcpd.service
         state: stopped
 
-    - name: Reset dhcp leases file
-      ansible.builtin.copy:
-        dest: /var/lib/dhcpd/dhcpd.leases
-        content: ''
-        owner: dhcpd
-        group: dhcpd
-        mode: '0644'
-        force: true
-
     - name: Start dhcpd service
       ansible.builtin.systemd_service:
         name: dhcpd.service

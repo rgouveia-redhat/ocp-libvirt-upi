@@ -17,6 +17,9 @@ BASTION_TYPE=$BASTION_TYPE
 BASTION_VARIANT=$BASTION_VARIANT
 BASTION_INSTALL_ISO=$BASTION_INSTALL_ISO
 
+INSTALLATION_METHOD=$INSTALLATION_METHOD
+INSTALLATION_PLATFORM=$INSTALLATION_PLATFORM
+
 DISCONNECTED=$DISCONNECTED
 REGISTRY=$REGISTRY
 PROXY=$PROXY
@@ -302,17 +305,32 @@ libvirt_create_masters () {
             echo "$(date +%T) INFO: Using disk: $disk"
 
             # Create vm in cluster network.
-            sudo nice -n 19 virt-install \
-                --name ${CLUSTER_NAME}-master${i} \
-                --cpu host-model \
-                --vcpus $MASTER_CPUS \
-                --memory $MASTER_MEMORY_SIZE \
-                --disk ${disk},size=$MASTER_DISK_SIZE \
-                --pxe \
-                --boot network,hd,menu=off \
-                --os-variant $BASTION_VARIANT \
-                --network network=${CLUSTER_NAME},model=virtio \
-                --noautoconsole
+            if [ "$INSTALLATION_METHOD" == 'ABI' ]; then
+
+                sudo nice -n 19 virt-install \
+                    --name ${CLUSTER_NAME}-master${i} \
+                    --cpu host-model \
+                    --vcpus $MASTER_CPUS \
+                    --memory $MASTER_MEMORY_SIZE \
+                    --disk ${disk},bus=scsi,size=$MASTER_DISK_SIZE \
+                    --boot hd,menu=off \
+                    --os-variant $BASTION_VARIANT \
+                    --network network=${CLUSTER_NAME},model=virtio \
+                    --noautoconsole
+            else
+
+                sudo nice -n 19 virt-install \
+                    --name ${CLUSTER_NAME}-master${i} \
+                    --cpu host-model \
+                    --vcpus $MASTER_CPUS \
+                    --memory $MASTER_MEMORY_SIZE \
+                    --disk ${disk},size=$MASTER_DISK_SIZE \
+                    --pxe \
+                    --boot network,hd,menu=off \
+                    --os-variant $BASTION_VARIANT \
+                    --network network=${CLUSTER_NAME},model=virtio \
+                    --noautoconsole
+            fi
 
             # We just need the macs to be generated. For now stop the vm.
             sudo virsh destroy ${CLUSTER_NAME}-master${i}
@@ -333,17 +351,32 @@ libvirt_create_workers () {
             echo "$(date +%T) INFO: Using disk: $disk"
 
             # Create vm in cluster network.
-            sudo nice -n 19 virt-install \
-                --name ${CLUSTER_NAME}-worker${i} \
-                --cpu host-model \
-                --vcpus $WORKER_CPUS \
-                --memory $WORKER_MEMORY_SIZE \
-                --disk ${disk},size=$WORKER_DISK_SIZE \
-                --pxe \
-                --boot network,hd,menu=off \
-                --os-variant $BASTION_VARIANT \
-                --network network=${CLUSTER_NAME},model=virtio \
-                --noautoconsole
+            if [ "$INSTALLATION_METHOD" == 'ABI' ]; then
+
+                sudo nice -n 19 virt-install \
+                    --name ${CLUSTER_NAME}-worker${i} \
+                    --cpu host-model \
+                    --vcpus $WORKER_CPUS \
+                    --memory $WORKER_MEMORY_SIZE \
+                    --disk ${disk},bus=scsi,size=$WORKER_DISK_SIZE \
+                    --boot hd,menu=off \
+                    --os-variant $BASTION_VARIANT \
+                    --network network=${CLUSTER_NAME},model=virtio \
+                    --noautoconsole
+            else
+
+                sudo nice -n 19 virt-install \
+                    --name ${CLUSTER_NAME}-worker${i} \
+                    --cpu host-model \
+                    --vcpus $WORKER_CPUS \
+                    --memory $WORKER_MEMORY_SIZE \
+                    --disk ${disk},size=$WORKER_DISK_SIZE \
+                    --pxe \
+                    --boot network,hd,menu=off \
+                    --os-variant $BASTION_VARIANT \
+                    --network network=${CLUSTER_NAME},model=virtio \
+                    --noautoconsole
+            fi
 
             # We just need the macs to be generated. For now stop the vm.
             sudo virsh destroy ${CLUSTER_NAME}-worker${i}
@@ -370,7 +403,13 @@ create_infra () {
     libvirt_create_storage
 
     libvirt_create_bastion
-    libvirt_create_bootstrap
+
+    if [ "$INSTALLATION_METHOD" == "UPI" ]; then
+        libvirt_create_bootstrap
+    else
+        echo "INFO: Installation method does not require a dedicated bootstrap node."
+    fi
+
     libvirt_create_masters
     libvirt_create_workers
 
@@ -408,6 +447,8 @@ EOF
     echo "---
 network_prefix: '$LIBVIRT_NETWORK_PREFIX'
 network_reverse: '$reverse'
+installation_method: '$INSTALLATION_METHOD'
+installation_platform: '$INSTALLATION_PLATFORM'
 disconnected: $DISCONNECTED
 registry: $REGISTRY
 proxy: $PROXY
@@ -422,7 +463,7 @@ pull_secret: '$PULL_SECRET'
 pull_secret_email: '$PULL_SECRET_EMAIL'
 " > ansible/vars/common.yaml
 
-    if [ "$(grep mac_bootstrap ansible/vars/common.yaml)" == "" ]; then
+    if [ "$INSTALLATION_METHOD" == "UPI" ] && [ "$(grep mac_bootstrap ansible/vars/common.yaml)" == "" ]; then
         mac=$(sudo virsh domiflist ${CLUSTER_NAME}-bootstrap | grep $CLUSTER_NAME | grep -Eo '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
         echo "mac_bootstrap: '$mac'" >> ansible/vars/common.yaml
     fi
