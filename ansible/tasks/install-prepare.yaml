@@ -71,12 +71,12 @@
 
 - name: Download oc-mirror
   ansible.builtin.get_url:
-    url: "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/oc-mirror.rhel9.tar.gz"
+    url: "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/latest/oc-mirror.rhel9.tar.gz"
     dest: /root/bin
     owner: root
     mode: '0640'
     force: false
-    checksum: sha256:https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/{{ cluster_version }}/sha256sum.txt
+    checksum: sha256:https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp/latest/sha256sum.txt
   ignore_errors: true
 
 # # Checking for openshift-install only.
