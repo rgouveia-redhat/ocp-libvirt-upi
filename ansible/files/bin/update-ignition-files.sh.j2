@@ -1,12 +1,11 @@
 #!/bin/bash
 
 cd /root
-rm -rf {{ cluster_name }} && mkdir {{ cluster_name }}
-cp install-config.yaml {{ cluster_name }}/
-openshift-install --dir {{ cluster_name }}/ create ignition-configs
+rm -rf install-dir && mkdir install-dir
+cp install-config.yaml install-dir
+openshift-install --dir ./install-dir/ create ignition-configs
 
-cp {{ cluster_name }}/*.ign /var/www/html/
+cp install-dir/*.ign /var/www/html/
 chown apache:apache /var/www/html/*.ign
 restorecon -F /var/www/html/
 ls -l /var/www/html/*.ign
-
