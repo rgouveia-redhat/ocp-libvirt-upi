@@ -4,15 +4,15 @@
 # From: rhcos-live-kernel-x86_64
 # To: rhcos-live-kernel.x86_64
 
-- name: Set live-kernel filename if version is not 4.19
+- name: Set live-kernel default filename as rhcos-live-kernel-x86_64 (for versions <= 4.18)
   ansible.builtin.set_fact:
     livekernel_filename: "rhcos-live-kernel-x86_64"
-  when: cluster_version is not ansible.builtin.match("4.19.*")
 
-- name: Set live-kernel filename if version is 4.19
+# consider the new default. TODO: needs better condition.
+- name: Update live-kernel filename if version is 4.19.x or 4.20.x
   ansible.builtin.set_fact:
     livekernel_filename: "rhcos-live-kernel.x86_64"
-  when: cluster_version is ansible.builtin.match("4.19.*")
+  when: cluster_version is ansible.builtin.match("4.19.*") or cluster_version is ansible.builtin.match("4.20.*")
 
 
 # Checking for live_kernel only.
