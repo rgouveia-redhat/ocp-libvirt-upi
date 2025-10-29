@@ -137,6 +137,6 @@
         mode: '0664'
         remote_src: true
       with_items:
-        - /root/{{ cluster_name }}/bootstrap.ign
-        - /root/{{ cluster_name }}/master.ign
-        - /root/{{ cluster_name }}/worker.ign
+        - /root/install-dir/bootstrap.ign
+        - /root/install-dir/master.ign
+        - /root/install-dir/worker.ign
