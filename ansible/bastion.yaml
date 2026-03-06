@@ -139,7 +139,6 @@
             cmd: ./bin/copy-abi-image-to-libvirt.sh
           args:
             executable: /bin/bash
-          args:
             chdir: ../
           delegate_to: localhost
           register: copy_iso
