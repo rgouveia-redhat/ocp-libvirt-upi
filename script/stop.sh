@@ -12,7 +12,7 @@ cluster_stop () {
     echo
     echo "Stopping nodes..."
 
-    for i in $(seq 1 3) ; do
+    for i in $(seq 1 ${NUMBER_CP_NODES}); do
         sudo virsh shutdown --domain ${CLUSTER_NAME}-master${i}
     done
 

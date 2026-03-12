@@ -71,18 +71,24 @@ frontend stats
 listen api-server-6443
   bind *:6443
   mode tcp
+{% if installation_method == 'UPI' %}
   server bootstrap bootstrap.{{ cluster_name }}.{{ cluster_domain }}:6443 check inter 1s backup
-  server master1 master1.{{ cluster_name }}.{{ cluster_domain }}:6443 check inter 1s
-  server master2 master2.{{ cluster_name }}.{{ cluster_domain }}:6443 check inter 1s
-  server master3 master3.{{ cluster_name }}.{{ cluster_domain }}:6443 check inter 1s
+{% endif %}
+{% for i in range(1, (number_cp_nodes | int) + 1) %}
+  server master{{ i }} master{{ i }}.{{ cluster_name }}.{{ cluster_domain }}:6443 check inter 1s
+{% endfor %}
+
 
 listen machine-config-server-22623
   bind *:22623
   mode tcp
+{% if installation_method == 'UPI' %}
   server bootstrap bootstrap.{{ cluster_name }}.{{ cluster_domain }}:22623 check inter 1s backup
-  server master1 master1.{{ cluster_name }}.{{ cluster_domain }}:22623 check inter 1s
-  server master2 master2.{{ cluster_name }}.{{ cluster_domain }}:22623 check inter 1s
-  server master3 master3.{{ cluster_name }}.{{ cluster_domain }}:22623 check inter 1s
+{% endif %}
+{% for i in range(1, (number_cp_nodes | int) + 1) %}
+  server master{{ i }} master{{ i }}.{{ cluster_name }}.{{ cluster_domain }}:22623 check inter 1s
+{% endfor %}
+
 
 {% if (number_workers | int) == 0 %}
 {# We have NO workers. Ingress pods are in the masters #}
@@ -91,7 +97,7 @@ listen ingress-router-443
   bind *:443
   mode tcp
   balance source
-{% for i in range(1, 4) %}
+{% for i in range(1, (number_cp_nodes | int) + 1) %}
   server master{{ i }} master{{ i }}.{{ cluster_name }}.{{ cluster_domain }}:443 check inter 1s
 {% endfor %}
 
@@ -99,13 +105,14 @@ listen ingress-router-80
   bind *:80
   mode tcp
   balance source
-{% for i in range(1, 4) %}
+{% for i in range(1, (number_cp_nodes | int) + 1) %}
   server master{{ i }} master{{ i }}.{{ cluster_name }}.{{ cluster_domain }}:80 check inter 1s
 {% endfor %}
 
 
 {% else %}
 {# We have workers with Ingress #}
+
 
 listen ingress-router-443
   bind *:443

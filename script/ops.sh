@@ -137,6 +137,16 @@ validate_defaults () {
   # When Connected, I guess the registry may be installed for cache, and proxy can be used although not needed.
 
   # If not defined
+  if [ "$NUMBER_CP_NODES" == "" ]; then
+    NUMBER_CP_NODES=3
+  fi
+
+  if ! ( [[ $NUMBER_CP_NODES -eq 1 ]] || [[ $NUMBER_CP_NODES -eq 3 ]] ); then
+    echo "$(date +%T) ERROR: Allowed number of control-plane nodes is: 1 or 3."
+    exit
+  fi
+
+  # If not defined
   if [ "$NUMBER_WORKERS" == "" ]; then
     NUMBER_WORKERS=2
   fi
@@ -207,7 +217,7 @@ start_abi_nodes () {
     echo
 
     # Start master vms.
-    for i in {1..3}; do
+    for i in $(seq 1 ${NUMBER_CP_NODES}); do
 
       echo "Starting master${i}..."
 

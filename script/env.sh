@@ -31,7 +31,15 @@ configure_env () {
     echo "##### DNS validation #####"
     echo
 
-    hosts='bastion api api-int console-openshift-console.apps bootstrap master1 master2 master3'
+    hosts='bastion api api-int console-openshift-console.apps'
+
+    if [ "$INSTALLATION_METHOD" == "UPI" ]; then
+        hosts="$hosts bootstrap"
+    fi
+
+    for i in $(seq 1 ${NUMBER_CP_NODES}); do
+        hosts="$hosts master${i}"
+    done    
 
     if [[ NUMBER_WORKERS -eq 2 ]]; then
         hosts="$hosts worker1 worker2"

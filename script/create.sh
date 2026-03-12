@@ -30,6 +30,8 @@ CLUSTER_NAME=$CLUSTER_NAME
 CLUSTER_DOMAIN=$CLUSTER_DOMAIN
 CLUSTER_VERSION=$CLUSTER_VERSION
 ARCH=$ARCH
+
+NUMBER_CP_NODES=$NUMBER_CP_NODES
 NUMBER_WORKERS=$NUMBER_WORKERS
 
 OPENSHIFT_MIRROR_BASE=$OPENSHIFT_MIRROR_BASE
@@ -295,7 +297,8 @@ libvirt_create_bootstrap () {
 libvirt_create_masters () {
 
     # Create masters vm.
-    for i in {1..3}; do
+    for i in $(seq 1 ${NUMBER_CP_NODES}); do
+
         if [ "$(sudo virsh list --all | grep ${CLUSTER_NAME}-master${i})" != "" ]; then
             echo "$(date +%T) INFO: Master${i} VM already exists."
         else
@@ -458,6 +461,7 @@ openshift_mirror_base: '$OPENSHIFT_MIRROR_BASE'
 cluster_version: '$CLUSTER_VERSION'
 cluster_name: '$CLUSTER_NAME'
 cluster_domain: '$CLUSTER_DOMAIN'
+number_cp_nodes: '$NUMBER_CP_NODES'
 number_workers: '$NUMBER_WORKERS'
 pull_secret: '$PULL_SECRET'
 pull_secret_email: '$PULL_SECRET_EMAIL'
@@ -468,7 +472,7 @@ pull_secret_email: '$PULL_SECRET_EMAIL'
         echo "mac_bootstrap: '$mac'" >> ansible/vars/common.yaml
     fi
 
-    for i in {1..3}; do
+    for i in $(seq 1 ${NUMBER_CP_NODES}); do
         if [ "$(grep mac_master${i} ansible/vars/common.yaml)" == "" ]; then
             mac=$(sudo virsh domiflist ${CLUSTER_NAME}-master${i} | grep $CLUSTER_NAME | grep -Eo '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})')
             echo "mac_master${i}: '$mac'" >> ansible/vars/common.yaml

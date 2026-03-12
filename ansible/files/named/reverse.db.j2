@@ -22,11 +22,15 @@ $ORIGIN {{ network_reverse }}.IN-ADDR.ARPA.
 3     IN    PTR    api-int.{{ cluster_name }}.{{ cluster_domain }}.
 {% endif %}
 
+{% if installation_method == 'UPI' %}
 9     IN    PTR    bootstrap.{{ cluster_name }}.{{ cluster_domain }}.
+{% endif %}
 
-10    IN    PTR    master1.{{ cluster_name }}.{{ cluster_domain }}.
-11    IN    PTR    master2.{{ cluster_name }}.{{ cluster_domain }}.
-12    IN    PTR    master3.{{ cluster_name }}.{{ cluster_domain }}.
+{% set ip = namespace(value=10) %}
+{% for i in range(1, (number_cp_nodes | int) + 1) %}
+{{ ip.value }}    IN    PTR    master{{ i }}.{{ cluster_name }}.{{ cluster_domain }}.
+{% set ip.value = ip.value + 1 %}
+{% endfor %}
 
 {% set ip = namespace(value=20) %}
 {% for i in range(1, (number_workers | int) + 1) %}

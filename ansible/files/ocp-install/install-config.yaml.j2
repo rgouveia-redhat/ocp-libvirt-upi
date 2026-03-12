@@ -13,7 +13,7 @@ controlPlane:
   hyperthreading: Enabled
   name: master
   platform: {}
-  replicas: 3
+  replicas: {{ number_cp_nodes }}
 
 metadata:
   name: {{ cluster_name }}

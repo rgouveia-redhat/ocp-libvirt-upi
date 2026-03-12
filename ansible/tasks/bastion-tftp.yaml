@@ -104,19 +104,37 @@
     group: root
     mode: '0644'
     state: link
+  when: mac_bootstrap is defined
 
-- name: Create a symbolic link for masters mac address
+- name: Create a symbolic link for master1 mac address
   ansible.builtin.file:
     src: master
-    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ item | replace(':', '-') }}
+    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ mac_master1 | replace(':', '-') }}
     owner: root
     group: root
     mode: '0644'
     state: link
-  with_items:
-    - "{{ mac_master1 }}"
-    - "{{ mac_master2 }}"
-    - "{{ mac_master3 }}"
+  when: mac_master1 is defined
+
+- name: Create a symbolic link for master2 mac address
+  ansible.builtin.file:
+    src: master
+    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ mac_master2 | replace(':', '-') }}
+    owner: root
+    group: root
+    mode: '0644'
+    state: link
+  when: mac_master2 is defined
+
+- name: Create a symbolic link for master3 mac address
+  ansible.builtin.file:
+    src: master
+    dest: /var/lib/tftpboot/pxelinux.cfg/01-{{ mac_master3 | replace(':', '-') }}
+    owner: root
+    group: root
+    mode: '0644'
+    state: link
+  when: mac_master3 is defined
 
 
 - name: Create a symbolic link for worker1 mac address

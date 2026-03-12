@@ -45,7 +45,6 @@ INSTALLATION_METHOD='ABI'
 #
 INSTALLATION_PLATFORM='none'
 
-
 #
 # OpenShift Cluster options
 #
@@ -103,6 +102,13 @@ PROXY=false
 # This is a post-install options, and instructions will be in the bastion docs directory.
 #
 REGISTRY_NFS=false
+
+#
+# Number of control-plane nodes?
+# IMPORTANT: Valid values are {1, 3}
+# IMPORTANT: Total number of compute replicas must be 0 when controlPlane.replicas is 1 for platform none or external
+#
+NUMBER_CP_NODES=1
 
 #
 # Number of worker?

@@ -39,26 +39,34 @@ host bootstrap {
 }
 {% endif %}
 
+{% if mac_master1 is defined %}
 host master1 {
     option host-name "master1.{{ cluster_name }}.{{ cluster_domain }}";
     hardware ethernet {{ mac_master1 }};
     fixed-address {{ network_prefix }}.10;
 }
+{% endif %}
 
+{% if mac_master2 is defined %}
 host master2 {
     option host-name "master2.{{ cluster_name }}.{{ cluster_domain }}";
     hardware ethernet {{ mac_master2 }};
     fixed-address {{ network_prefix }}.11;
 }
+{% endif %}
 
+{% if mac_master3 is defined %}
 host master3 {
     option host-name "master3.{{ cluster_name }}.{{ cluster_domain }}";
     hardware ethernet {{ mac_master3 }};
     fixed-address {{ network_prefix }}.12;
 }
+{% endif %}
+
 
 {# This needs rework!!! #}
 {# What if there are more workers ? #}
+
 
 {% if mac_worker1 is defined %}
 host worker1 {

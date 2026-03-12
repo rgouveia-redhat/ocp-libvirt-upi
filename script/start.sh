@@ -62,7 +62,7 @@ cluster_start () {
 
     echo 
     echo "Starting masters..."
-    for i in $(seq 1 3); do
+    for i in $(seq 1 ${NUMBER_CP_NODES}); do
         sudo virsh start --domain ${CLUSTER_NAME}-master${i}
     done
 
