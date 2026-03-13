@@ -150,7 +150,7 @@
     owner: root
     group: root
     mode: '0600'
-    backup: false
+    backup: true
 
 
 ### Other utils
