@@ -1,6 +1,10 @@
 #!/bin/bash
 
-# TODO: Check if file exists.
+if ! [ -f ./.re-run-with-network ]; then
+    echo "Error: No network config found. Was the cluster created?"
+    exit -1
+fi
+
 network_prefix=$(cat .re-run-with-network)
 
 sudo scp -i ./ssh/id_rsa \
