@@ -139,4 +139,36 @@ fi
 sudo systemctl restart haproxy.service
 sleep 2
 systemctl status haproxy.service
+exit 0
 
+
+## Black magic to also access a hosted control plane
+
+# frontend api-6443
+#   bind *:6443
+#   mode tcp
+
+#   # Mitigate CVE-2023-40225 (Proxy forwards malformed empty Content-Length headers)
+#   http-request deny if { hdr_len(content-length) 0 }
+
+#   # Strip off Proxy headers to prevent HTTpoxy (https://httpoxy.org/)
+#   http-request del-header Proxy
+
+#   # DNS labels are case insensitive (RFC 4343), we need to convert the hostname into lowercase
+#   # before matching, or any requests containing uppercase characters will never match.
+#   http-request set-header Host %[req.hdr(Host),lower]
+
+#   use_backend be6443_hub.ocp.local if { req.hdr(Host) -i api.hub.ocp.local }
+#   use_backend be6443_hcp1.local if { req.hdr(Host) -i api.hcp1.local }
+
+# backend be6443_hub.ocp.local
+#   mode http
+#   option redispatch
+#   balance random
+#   server lb 192.168.7.3:6443 check inter 1s
+
+# backend be6443_hcp1.local
+#   mode http
+#   option redispatch
+#   balance random
+#   server lb 192.168.7.200:6443 check inter 1s
