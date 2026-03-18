@@ -107,7 +107,7 @@ listen ingress-router-80
   balance source
   server lb ${network_prefix}.3:80 check inter 1s
 
-" | sudo tee /etc/haproxy/haproxy.cfg
+" | sudo tee --append /etc/haproxy/haproxy.cfg
 
 else # there are only two cases?
 
@@ -132,10 +132,11 @@ listen ingress-router-80
   balance source
   server lb ${network_prefix}.5:80 check inter 1s
 
-" >> /etc/haproxy/haproxy.cfg
+" | sudo tee --append /etc/haproxy/haproxy.cfg
 
 fi
 
 sudo systemctl restart haproxy.service
 sleep 2
 systemctl status haproxy.service
+
